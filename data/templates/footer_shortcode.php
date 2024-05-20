@@ -1,0 +1,1 @@
+<img width="430" height="260" src="[image]" class="image wp-image-7030  attachment-full size-full" alt="[$alt]" decoding="async" loading="lazy" style="max-width: 100%; height: auto;" title="Промоция">

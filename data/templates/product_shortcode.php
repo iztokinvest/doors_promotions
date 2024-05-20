@@ -1,0 +1,1 @@
+<img alt="[alt]" src="[image]" style="margin-bottom: 20px; width: 250px;">
