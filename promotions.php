@@ -3,7 +3,7 @@
 Plugin Name: MVM Promotions
 Plugin URI: https://github.com/iztokinvest/wp_promotions
 Description: Promo shortcodes.
-Version: 1.0.2
+Version: 1.0.3
 Author: Martin Mladenov
 */
 
