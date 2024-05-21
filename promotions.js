@@ -101,8 +101,32 @@ document.addEventListener("DOMContentLoaded", function () {
     newTemplateButton.addEventListener('click', () => {
 	    if (addTemplateDiv.style.display === "none" || addTemplateDiv.style.display === "") {
         addTemplateDiv.style.display = "block";
-    } else {
-        addTemplateDiv.style.display = "none";
-    }
-    })
+        } else {
+            addTemplateDiv.style.display = "none";
+        }
+    });
+    
+    document.querySelectorAll('textarea.template_content').forEach(function(textarea) {
+        const editor = CodeMirror.fromTextArea(textarea, {
+            lineNumbers: true,
+            mode: "htmlmixed",
+            theme: "monokai",
+            lineWrapping: true,
+            gutters: ["CodeMirror-lint-markers"],
+            lint: true
+        });
+
+        function checkForErrors() {
+            const tr = textarea.closest('tr');
+            const lintErrors = editor.state.lint.marked.length > 0;
+            if (lintErrors) {
+                // form.style.display = 'none';
+            } else {
+                // form.style.display = 'block';
+            }
+        }
+
+        editor.on('update', checkForErrors);
+        editor.on('change', checkForErrors);
+    });
 });

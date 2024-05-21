@@ -19,6 +19,19 @@ function load_bootstrap($hook) {
 
     wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css');
     wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js', array('jquery'), null, true);
+    wp_enqueue_script('codemirror-js', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js', array(), '5.65.2', true);
+    wp_enqueue_script('codemirror-mode-htmlmixed', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js', array('codemirror-js'), '5.65.2', true);
+    wp_enqueue_script('codemirror-mode-xml', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js', array('codemirror-js'), '5.65.2', true);
+    wp_enqueue_script('codemirror-mode-javascript', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js', array('codemirror-js'), '5.65.2', true);
+    wp_enqueue_script('codemirror-mode-css', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js', array('codemirror-js'), '5.65.2', true);
+    wp_enqueue_style('codemirror-css', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css', array(), '5.65.2');
+    wp_enqueue_style('codemirror-theme-monokai', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css', array(), '5.65.2');
+
+    // Enqueue HTMLHint
+    wp_enqueue_script('htmlhint', 'https://cdnjs.cloudflare.com/ajax/libs/htmlhint/1.1.0/htmlhint.min.js', array(), '1.1.0', true);
+    wp_enqueue_script('codemirror-addon-lint', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/lint.min.js', array('codemirror-js'), '5.65.2', true);
+    wp_enqueue_script('codemirror-html-lint', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/html-lint.min.js', array('htmlhint', 'codemirror-addon-lint'), '5.65.2', true);
+    wp_enqueue_style('codemirror-lint-css', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/lint.min.css', array(), '5.65.2');
 }
 
 function enqueue_promotions_script() {
@@ -282,9 +295,9 @@ function promotions_templates_page() {
         <h1>Списък с шаблони</h1>
         <button type="button" class="btn btn-info m-2" id="new_template_button">Нов шаблон</button>
         <!-- Add New Template Form -->
-        <div class="card mb-4" id="add_template_div" style="display:none;">
+        <div class="card mb-4" id="add_template_div" style="display:none;width:100%;max-width:100%;">
             <div class="card-header">
-                <h2>Добави нов шаблона</h2>
+                <h2>Добави нов шаблон</h2>
             </div>
             <div class="card-body">
                 <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
@@ -298,7 +311,7 @@ function promotions_templates_page() {
                     </div>
                     <div class="form-group">
                         <label for="template_content">Код</label>
-                        <textarea class="form-control" id="template_content" name="template_content" rows="4" required></textarea>
+                        <textarea class="form-control template_content" name="template_content" required></textarea>
                     </div>
                     <input type="hidden" name="action" value="add_new_template">
                     <button type="submit" class="btn btn-success">Добави шаблона</button>
@@ -324,7 +337,7 @@ function promotions_templates_page() {
                             <td><?php echo esc_html($row->id); ?></td>
                             <td><?php echo esc_html($row->shortcode); ?></td>
                             <td><input type="text" name="shortcode_name" value="<?php echo esc_html($row->shortcode_name); ?>"></td>
-                            <td><textarea class="form-control" name="template_content" id="promo_title"><?php echo esc_html($row->template_content); ?></textarea></td>
+                            <td><textarea class="form-control template_content" name="template_content"><?php echo esc_html($row->template_content); ?></textarea></td>
                             <td>
                                 <input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
                                 <input type="hidden" name="action" value="update_template">
