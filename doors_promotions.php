@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: MVM Promotions
-Plugin URI: https://github.com/iztokinvest/wp_promotions
-Description: Promo shortcodes.
-Version: 1.0.3
+Plugin Name: Doors Promotions
+Plugin URI: https://github.com/iztokinvest/doors_promotions
+Description: Promo banner shortcodes.
+Version: 1.0.4
 Author: Martin Mladenov
 */
 
@@ -50,7 +50,7 @@ function shortcodes($image, $alt) {
 function handle_shortcode($atts, $shortcode) {
     global $wpdb, $product;
 
-    $table_name = $wpdb->prefix . 'promotions';
+    $table_name = $wpdb->prefix . 'doors_promotions';
     $current_date = date('Y-m-d');
 
     $product_categories = $product ? $product->get_category_ids() : [];
@@ -186,7 +186,7 @@ function promotions_settings_page() {
 
 function promotions_list_page() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'promotions';
+    $table_name = $wpdb->prefix . 'doors_promotions';
     $results = $wpdb->get_results("SELECT * FROM $table_name ORDER BY end_date DESC");
 
     ?>
@@ -253,7 +253,7 @@ function promotions_list_page() {
 function handle_promotions_form() {
     if (isset($_POST['submit_promo'])) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'promotions';
+        $table_name = $wpdb->prefix . 'doors_promotions';
 
         $promo_categories = isset($_POST['promo_categories']) ? $_POST['promo_categories'] : array();
         $promo_title = sanitize_text_field($_POST['promo_title']);
@@ -320,7 +320,7 @@ function handle_promotions_form() {
 function handle_edit_promo() {
     if (isset($_POST['action']) && $_POST['action'] == 'edit_promo' && isset($_POST['promo_id'])) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'promotions';
+        $table_name = $wpdb->prefix . 'doors_promotions';
         $promo_id = intval($_POST['promo_id']);
         $promo_title = sanitize_text_field($_POST['promo_title']);
         $promo_shortcode = sanitize_text_field($_POST['promo_shortcode']);
@@ -351,7 +351,7 @@ function handle_edit_promo() {
 function handle_delete_promo() {
     if (isset($_POST['action']) && $_POST['action'] == 'delete_promo' && isset($_POST['promo_id'])) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'promotions';
+        $table_name = $wpdb->prefix . 'doors_promotions';
         $promo_id = intval($_POST['promo_id']);
 
         // Вземи данните за изображението преди да изтриеш записа
@@ -386,7 +386,7 @@ function handle_delete_promo() {
 function handle_delete_expired() {
     if (isset($_POST['action']) && $_POST['action'] == 'delete_expired') {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'promotions';
+        $table_name = $wpdb->prefix . 'doors_promotions';
         $today = date('Y-m-d');
 
         // Get all expired records
@@ -443,7 +443,7 @@ function promotions_menu() {
 
 function create_promotions_table() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'promotions';
+    $table_name = $wpdb->prefix . 'doors_promotions';
 
     $charset_collate = $wpdb->get_charset_collate();
 
