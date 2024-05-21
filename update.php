@@ -11,7 +11,7 @@ class WP_Promotions_Updater {
         add_filter('upgrader_post_install', [$this, 'post_install'], 10, 3);
         $this->slug = plugin_basename($plugin_file);
         $this->pluginData = get_plugin_data($plugin_file);
-        $this->repo = 'iztokinvest/wp_promotions';
+        $this->repo = 'iztokinvest/doors_promotions';
     }
 
     private function get_repository_info() {
