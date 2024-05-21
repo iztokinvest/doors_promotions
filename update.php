@@ -69,10 +69,44 @@ class WP_Promotions_Updater {
     public function post_install($true, $hook_extra, $result) {
         global $wp_filesystem;
         $plugin_folder = WP_PLUGIN_DIR . '/' . dirname($this->slug);
-        $wp_filesystem->move($result['destination'], $plugin_folder);
-        $result['destination'] = $plugin_folder;
+        
+        // Move files while excluding the 'data' folder
+        $data_folder = $plugin_folder . '/data';
+        $temp_data_folder = $result['destination'] . '/data';
+
+        if ($wp_filesystem->exists($temp_data_folder)) {
+            $wp_filesystem->move($temp_data_folder, $data_folder . '_temp', true);
+        }
+        
+        // Move all files except the 'data' folder
+        $this->custom_recursive_copy($result['destination'], $plugin_folder);
+
+        // Restore the 'data' folder
+        if ($wp_filesystem->exists($data_folder . '_temp')) {
+            $wp_filesystem->move($data_folder . '_temp', $data_folder, true);
+        }
+
+        $wp_filesystem->delete($result['destination'], true);
+
         activate_plugin($this->slug);
         return $result;
+    }
+
+    private function custom_recursive_copy($source, $destination) {
+        global $wp_filesystem;
+        $dir = opendir($source);
+        @mkdir($destination);
+
+        while (($file = readdir($dir)) !== false) {
+            if (($file != '.') && ($file != '..') && ($file != 'data')) {
+                if (is_dir($source . '/' . $file)) {
+                    $this->custom_recursive_copy($source . '/' . $file, $destination . '/' . $file);
+                } else {
+                    $wp_filesystem->copy($source . '/' . $file, $destination . '/' . $file);
+                }
+            }
+        }
+        closedir($dir);
     }
 }
 
