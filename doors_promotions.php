@@ -264,9 +264,8 @@ function handle_promotions_form() {
         $promo_image = '';
 
         if (!empty($_FILES['promo_image']['tmp_name'])) {
-            // Премести качения файл в директорията /promotions
-            $upload_path = $upload_dir['basedir'] . '/promotions/';
-            $upload_url = $upload_dir['baseurl'] . '/promotions/';
+            $upload_path = $upload_dir['basedir'] . '/doors_promotions/';
+            $upload_url = $upload_dir['baseurl'] . '/doors_promotions/';
 
             // Създай директорията, ако не съществува
             if (!file_exists($upload_path)) {
