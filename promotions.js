@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	const promoImageUploadPreview = document.getElementById("promo_image_preview");
 	const uploadedImages = document.querySelectorAll(".uploadedImages");
 	const datepickers = document.querySelectorAll(".datepicker-input");
+	const newTemplateButton = document.getElementById('new_template_button');
+	const addTemplateDiv = document.getElementById('add_template_div');
 
 	(function () {
 		Datepicker.locales.bg = {
@@ -95,4 +97,12 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+    
+    newTemplateButton.addEventListener('click', () => {
+	    if (addTemplateDiv.style.display === "none" || addTemplateDiv.style.display === "") {
+        addTemplateDiv.style.display = "block";
+    } else {
+        addTemplateDiv.style.display = "none";
+    }
+    })
 });

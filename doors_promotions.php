@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.0.6
+Version: 1.0.4
 Author: Martin Mladenov
 */
 
@@ -23,15 +23,24 @@ function enqueue_promotions_script() {
     wp_enqueue_script('vanillajs-datepicker-js', 'https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker.min.js', array(), null, true);
 }
 
-function load_shortcode_template($file, $placeholders) {
-    $full_path = plugin_dir_path(__FILE__) . $file;
+function fetch_shortcodes_from_db() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'doors_promotions_templates';
 
-    if (!file_exists($full_path)) {
-        return '';
+    $results = $wpdb->get_results("SELECT shortcode, shortcode_name, template_content FROM $table_name", ARRAY_A);
+
+    $shortcodes = [];
+    foreach ($results as $row) {
+        $shortcodes[$row['shortcode']] = [
+            'name' => $row['shortcode_name'],
+            'content' => $row['template_content']
+        ];
     }
 
-    $content = file_get_contents($full_path);
+    return $shortcodes;
+}
 
+function load_shortcode_template($content, $placeholders) {
     foreach ($placeholders as $key => $value) {
         $content = str_replace("[$key]", $value, $content);
     }
@@ -40,8 +49,9 @@ function load_shortcode_template($file, $placeholders) {
 }
 
 function shortcodes($image, $alt) {
-    foreach (shortcode_names() as $key => $value) {
-        $shortcodes[$key] = load_shortcode_template('data/templates/'.$key.'.php', ['image' => $image, 'alt' => $alt]);
+    $shortcodes = [];
+    foreach (fetch_shortcodes_from_db() as $key => $data) {
+        $shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt]);
     }
 
     return $shortcodes;
@@ -70,8 +80,8 @@ function handle_shortcode($atts, $shortcode) {
 }
 
 function initialize_shortcodes() {
-    $shortcodes = shortcode_names();
-    foreach ($shortcodes as $shortcode => $label) {
+    $shortcodes = fetch_shortcodes_from_db();
+    foreach ($shortcodes as $shortcode => $data) {
         add_shortcode($shortcode, function($atts) use ($shortcode) {
             return handle_shortcode($atts, $shortcode);
         });
@@ -98,9 +108,13 @@ function promotions_settings_page() {
                 <div class="col-sm-8">
                     <select class="form-control" name="promo_shortcode" id="promo_shortcode" placeholder="Позиция">
                         <option></option>
-                        <?php foreach (shortcode_names() as $shortcode => $name) {
+                        <?php
+                        $shortcodes = fetch_shortcodes_from_db();
+                        foreach ($shortcodes as $shortcode => $data) {
+                            $name = esc_html($data['name']);
                             echo "<option value='$shortcode'>$name</option>";
-                        } ?>
+                        }
+                        ?>
                     </select>
                 </div>
             </div>
@@ -214,8 +228,11 @@ function promotions_list_page() {
                             <td>
                                 <?php
                                     echo '<select name="promo_shortcode" id="promo_shortcode">';
-                                    foreach (shortcode_names() as $shortcode => $name) {
-                                        echo "<option value='$shortcode' ".($row->shortcode == $shortcode ? 'selected' : '').">$name</option>";
+                                    $shortcodes = fetch_shortcodes_from_db();
+                                    foreach ($shortcodes as $shortcode => $data) {
+                                        $name = esc_html($data['name']);
+                                        $selected = ($row->shortcode == $shortcode) ? 'selected' : '';
+                                        echo "<option value='$shortcode' $selected>$name</option>";
                                     }
                                     echo '</select>';
                                 ?>
@@ -249,6 +266,79 @@ function promotions_list_page() {
     <?php
 }
 
+function promotions_templates_page() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'doors_promotions_templates';
+    $results = $wpdb->get_results("SELECT * FROM $table_name");
+
+    ?>
+    <div class="wrap">
+        <h1>Списък с шаблони</h1>
+        <button type="button" class="btn btn-info m-2" id="new_template_button">Нов шаблон</button>
+        <!-- Add New Template Form -->
+        <div class="card mb-4" id="add_template_div" style="display:none;">
+            <div class="card-header">
+                <h2>Добави нов шаблона</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+                    <div class="form-group">
+                        <label for="shortcode">Shortcode</label>
+                        <input type="text" class="form-control" id="shortcode" name="shortcode" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="shortcode_name">Име</label>
+                        <input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="template_content">Код</label>
+                        <textarea class="form-control" id="template_content" name="template_content" rows="4" required></textarea>
+                    </div>
+                    <input type="hidden" name="action" value="add_new_template">
+                    <button type="submit" class="btn btn-success">Добави шаблона</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Existing Templates Table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Shortcode</th>
+                    <th>Име</th>
+                    <th>Код</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($results as $row) : ?>
+                    <tr>
+                        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+                            <td><?php echo esc_html($row->id); ?></td>
+                            <td><?php echo esc_html($row->shortcode); ?></td>
+                            <td><input type="text" name="shortcode_name" value="<?php echo esc_html($row->shortcode_name); ?>"></td>
+                            <td><textarea class="form-control" name="template_content" id="promo_title"><?php echo esc_html($row->template_content); ?></textarea></td>
+                            <td>
+                                <input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
+                                <input type="hidden" name="action" value="update_template">
+                                <button type="submit" class="btn btn-primary">Редактирай</button>
+                            </td>
+                        </form>
+                        <td>
+                            <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+                                <input type="hidden" name="action" value="delete_template">
+                                <input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
+                                <button type="submit" class="btn btn-danger">Изтрий</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php
+}
 
 function handle_promotions_form() {
     if (isset($_POST['submit_promo'])) {
@@ -419,10 +509,76 @@ function handle_delete_expired() {
     }
 }
 
+function handle_add_new_template() {
+    if (isset($_POST['action']) && $_POST['action'] == 'add_new_template') {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'doors_promotions_templates';
+        $shortcode = sanitize_text_field($_POST['shortcode']);
+        $shortcode_name = sanitize_text_field($_POST['shortcode_name']);
+        $template_content = wp_kses_post($_POST['template_content']);
+
+        $wpdb->insert(
+            $table_name,
+            [
+                'shortcode' => $shortcode,
+                'shortcode_name' => $shortcode_name,
+                'template_content' => $template_content
+            ]
+        );
+
+        update_option('promo_message', 'Шаблонът е добавен успешно.');
+
+        wp_redirect(admin_url('admin.php?page=promotions_templates'));
+        exit;
+    } else {
+        var_dump($_POST);
+        exit;
+    }
+}
+
+function handle_update_template() {
+    if (isset($_POST['promo_id']) && isset($_POST['template_content'])) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'doors_promotions_templates';
+        $promo_id = intval($_POST['promo_id']);
+        $template_content = wp_kses_post($_POST['template_content']);
+    
+        // Correct the array structure
+        $wpdb->update(
+            $table_name,
+            [ 'template_content' => $template_content ], // Data to update
+            [ 'id' => $promo_id ] // Where clause
+        );
+        
+        update_option('promo_message', 'Успешно редактиране.');
+    
+        wp_redirect(admin_url('admin.php?page=promotions_templates'));
+        exit;
+    } else {
+        var_dump($_POST);
+        exit;
+    }
+}
+
+function handle_delete_template() {
+    if (isset($_POST['action']) && $_POST['action'] == 'delete_template' && isset($_POST['promo_id'])) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'doors_promotions_templates';
+        $promo_id = intval($_POST['promo_id']);
+    
+        $wpdb->delete($table_name, array('id' => $promo_id));
+        
+        update_option('promo_message', 'Успешно редактиране.');
+    
+        wp_redirect(admin_url('admin.php?page=promotions_templates'));
+        exit;
+    }
+}
+
 function promotions_menu() {
     add_menu_page(
         'Банери за промоции',
-        'Промоции',
+        'Промо банери',
         'manage_options',
         'promotions',
         'promotions_list_page',
@@ -432,21 +588,32 @@ function promotions_menu() {
 
     add_submenu_page(
         'promotions',
-        'Добавяне на банер',
-        'Добавяне на банер',
+        'Качване на банер',
+        'Качване на банер',
         'manage_options',
         'promotions_settings',
         'promotions_settings_page'
     );
+    
+    add_submenu_page(
+        'promotions',
+        'Шаблони',
+        'Шаблони',
+        'manage_options',
+        'promotions_templates',
+        'promotions_templates_page'
+    );
 }
 
-function create_promotions_table() {
+function create_promotions_tables() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'doors_promotions';
+    
+    $promotions_table = $wpdb->prefix . 'doors_promotions';
+    $templates_table = $wpdb->prefix . 'doors_promotions_templates';
 
     $charset_collate = $wpdb->get_charset_collate();
 
-    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+    $sql_promotions = "CREATE TABLE IF NOT EXISTS $table_name (
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         category mediumint(9) NULL,
         shortcode varchar(255) NOT NULL,
@@ -456,9 +623,18 @@ function create_promotions_table() {
         end_date date NOT NULL,
         PRIMARY KEY (id)
     ) $charset_collate;";
+    
+    $sql_templates = "CREATE TABLE IF NOT EXISTS $templates_table (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        shortcode varchar(255) NOT NULL,
+        shortcode_name varchar(255) NOT NULL,
+        template_content text NOT NULL,
+        PRIMARY KEY (id)
+    ) $charset_collate;";
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
+    dbDelta($sql_promotions);
+    dbDelta($sql_templates);
 }
 
 function remove_admin_notices() {
@@ -481,7 +657,7 @@ function show_admin_message() {
     }
 }
 
-register_activation_hook(__FILE__, 'create_promotions_table');
+register_activation_hook(__FILE__, 'create_promotions_tables');
 
 initialize_shortcodes();
 
@@ -495,3 +671,6 @@ add_action('admin_post_submit_promo', 'handle_promotions_form');
 add_action('admin_post_edit_promo', 'handle_edit_promo');
 add_action('admin_post_delete_promo', 'handle_delete_promo');
 add_action('admin_post_delete_expired', 'handle_delete_expired');
+add_action('admin_post_add_new_template', 'handle_add_new_template');
+add_action('admin_post_update_template', 'handle_update_template');
+add_action('admin_post_delete_template', 'handle_delete_template');
