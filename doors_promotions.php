@@ -10,9 +10,15 @@ Author: Martin Mladenov
 include_once(plugin_dir_path(__FILE__) . 'data/shortcodes.php');
 require_once plugin_dir_path(__FILE__) . 'update.php';
 
-function load_bootstrap() {
+function load_bootstrap($hook) {
+    $plugin_page = 'promotions'; // Replace with your actual plugin page slug
+
+    if (!preg_match('/promotions/', $hook)) {
+        return;
+    }
+
     wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css');
-    wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js', array('jquery'), null, true);
+    wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js', array('jquery'), null, true);
 }
 
 function enqueue_promotions_script() {
@@ -98,7 +104,7 @@ function promotions_settings_page() {
             <div class="form-group row">
                 <label for="promo_image" class="col-sm-4 col-form-label">Качи изображение</label>
                 <div class="col-sm-8">
-                    <input type="file" class="form-control-file" name="promo_image" id="promo_image">
+                    <input type="file" class="form-control-file" name="promo_image" id="promo_image" required>
                     <img id="promo_image_preview" src="" alt="Selected Image" style="max-width: 300px; max-height: 300px; display: none;">
                 </div>
             </div>
@@ -106,7 +112,7 @@ function promotions_settings_page() {
             <div class="form-group row">
                 <label for="promo_title" class="col-sm-4 col-form-label">Позиция (shortcode)</label>
                 <div class="col-sm-8">
-                    <select class="form-control" name="promo_shortcode" id="promo_shortcode" placeholder="Позиция">
+                    <select class="form-control" name="promo_shortcode" id="promo_shortcode" placeholder="Позиция" required>
                         <option></option>
                         <?php
                         $shortcodes = fetch_shortcodes_from_db();
@@ -122,21 +128,21 @@ function promotions_settings_page() {
             <div class="form-group row">
                 <label for="promo_title" class="col-sm-4 col-form-label">Заглавие</label>
                 <div class="col-sm-8">
-                    <input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие">
+                    <input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" required>
                 </div>
             </div>
 
             <div class="form-group row">
                 <label for="promo_start_date" class="col-sm-4 col-form-label">Начална дата</label>
                 <div class="col-sm-8">
-                    <input type="text" class="form-control datepicker-input" name="promo_start_date" id="promo_start_date" />
+                    <input required type="text" class="form-control datepicker-input" name="promo_start_date" id="promo_start_date" />
                 </div>
             </div>
 
             <div class="form-group row">
                 <label for="promo_end_date" class="col-sm-4 col-form-label">Крайна дата</label>
                 <div class="col-sm-8">
-                    <input type="text" class="form-control datepicker-input" name="promo_end_date" id="promo_end_date" />
+                    <input required type="text" class="form-control datepicker-input" name="promo_end_date" id="promo_end_date" />
                 </div>
             </div>
 
