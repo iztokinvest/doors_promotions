@@ -3,8 +3,10 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.2.1
+Version: 1.2.2
 Author: Martin Mladenov
+GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
+GitHub Branch: main
 */
 
 require_once plugin_dir_path(__FILE__) . 'update.php';
@@ -276,7 +278,7 @@ function promotions_list_page() {
                 <?php endforeach; ?>
             </tbody>
         </table>
-        <form method="post" action="https://doormann.bg/wp-admin/admin-post.php">
+        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
             <input type="hidden" name="action" value="delete_expired">
             <button type="submit" class="btn btn-danger">Изтрий приключените</button>
         </form>
@@ -292,32 +294,6 @@ function promotions_templates_page() {
     ?>
     <div class="wrap">
         <h1>Списък с шаблони</h1>
-        <button type="button" class="btn btn-info m-2" id="new_template_button">Нов шаблон</button>
-        <!-- Add New Template Form -->
-        <div class="card mb-4" id="add_template_div" style="display:none;width:100%;max-width:100%;">
-            <div class="card-header">
-                <h2>Добави нов шаблон</h2>
-            </div>
-            <div class="card-body">
-                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-                    <div class="form-group">
-                        <label for="shortcode">Shortcode</label>
-                        <input type="text" class="form-control" id="shortcode" name="shortcode" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="shortcode_name">Име</label>
-                        <input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="template_content">Код</label>
-                        <textarea class="form-control template_content" name="template_content" required></textarea>
-                    </div>
-                    <input type="hidden" name="action" value="add_new_template">
-                    <button type="submit" class="btn btn-success">Добави шаблона</button>
-                </form>
-            </div>
-        </div>
-
         <!-- Existing Templates Table -->
         <table class="table table-striped">
             <thead>
@@ -326,21 +302,32 @@ function promotions_templates_page() {
                     <th>Shortcode</th>
                     <th>Име</th>
                     <th>Код</th>
-                    <th>Действия</th>
+                    <th colspan="2">Действия</th>
                 </tr>
             </thead>
             <tbody>
+                <tr class="bg-secondary">
+                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+                        <td colspan="2"><input type="text" class="form-control" id="shortcode" name="shortcode" required>Добавяне на нов шаблон. За продукт с категории трябва да има product в shortcode.</td>
+                        <td><input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required></td>
+                        <td><textarea class="form-control template_content" name="template_content"></textarea></td>
+                        <td colspan="2">
+                            <input type="hidden" name="action" value="add_new_template">
+                            <button type="submit" class="btn btn-success template-button" style="display:none;">Добави</button>
+                        </td>
+                    </form>
+                </tr>
                 <?php foreach ($results as $row) : ?>
                     <tr>
                         <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
                             <td><?php echo esc_html($row->id); ?></td>
-                            <td><?php echo esc_html($row->shortcode); ?></td>
+                            <td><input type="text" name="shortcode" value="<?php echo esc_html($row->shortcode); ?>"></td>
                             <td><input type="text" name="shortcode_name" value="<?php echo esc_html($row->shortcode_name); ?>"></td>
                             <td><textarea class="form-control template_content" name="template_content"><?php echo esc_html($row->template_content); ?></textarea></td>
                             <td>
                                 <input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
                                 <input type="hidden" name="action" value="update_template">
-                                <button type="submit" class="btn btn-primary">Редактирай</button>
+                                <button type="submit" class="btn btn-primary template-button" style="display:none;">Редактирай</button>
                             </td>
                         </form>
                         <td>
@@ -559,13 +546,19 @@ function handle_update_template() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'doors_promotions_templates';
         $promo_id = intval($_POST['promo_id']);
+        $shortcode = sanitize_text_field($_POST['shortcode']);
+        $shortcode_name = sanitize_text_field($_POST['shortcode_name']);
         $template_content = wp_kses_post($_POST['template_content']);
     
         // Correct the array structure
         $wpdb->update(
             $table_name,
-            [ 'template_content' => $template_content ], // Data to update
-            [ 'id' => $promo_id ] // Where clause
+            [
+                'shortcode' => $shortcode,
+                'shortcode_name' => $shortcode_name,
+                'template_content' => $template_content
+            ],
+            [ 'id' => $promo_id ]
         );
         
         update_option('promo_message', 'Успешно редактиране.');
@@ -631,7 +624,7 @@ function create_promotions_tables() {
 
     $charset_collate = $wpdb->get_charset_collate();
 
-    $sql_promotions = "CREATE TABLE IF NOT EXISTS $table_name (
+    $sql_promotions = "CREATE TABLE IF NOT EXISTS $promotions_table (
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         category mediumint(9) NULL,
         shortcode varchar(255) NOT NULL,

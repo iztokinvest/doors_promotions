@@ -5,8 +5,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	const promoImageUploadPreview = document.getElementById("promo_image_preview");
 	const uploadedImages = document.querySelectorAll(".uploadedImages");
 	const datepickers = document.querySelectorAll(".datepicker-input");
-	const newTemplateButton = document.getElementById('new_template_button');
-	const addTemplateDiv = document.getElementById('add_template_div');
 
 	(function () {
 		Datepicker.locales.bg = {
@@ -34,7 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	datepickers.forEach((element) => {
 		const datepicker = new Datepicker(element, {
 			format: "dd/mm/yyyy",
-			daysOfWeekHighlighted: [6,0],
+			daysOfWeekHighlighted: [6, 0],
 			autohide: true,
 			weekStart: 1,
 			language: "bg",
@@ -45,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		promoShortcode.addEventListener("change", (event) => {
 			const trigger = event.currentTarget;
 
-			if (trigger.value == "product_shortcode") {
+			if (trigger.value.includes("product")) {
 				promoCategories.style.display = "table";
 			} else {
 				promoCategories.style.display = "none";
@@ -84,49 +82,42 @@ document.addEventListener("DOMContentLoaded", function () {
 			image.closest("td").insertBefore(infoDiv, image.nextSibling);
 		});
 	}
-	
-	document.querySelectorAll('.base-category').forEach(function(baseCheckbox) {
-        baseCheckbox.addEventListener('change', function() {
-            var categoryId = this.getAttribute('data-category-id');
-            var subCategories = document.querySelectorAll('.sub-category[data-parent-id="' + categoryId + '"]');
-            subCategories.forEach(function(subCheckbox) {
-                subCheckbox.disabled = baseCheckbox.checked;
-                if (baseCheckbox.checked) {
-                    subCheckbox.checked = false; // Uncheck subcategory if base is checked
-                }
-            });
-        });
-    });
-    
-    newTemplateButton.addEventListener('click', () => {
-	    if (addTemplateDiv.style.display === "none" || addTemplateDiv.style.display === "") {
-        addTemplateDiv.style.display = "block";
-        } else {
-            addTemplateDiv.style.display = "none";
-        }
-    });
-    
-    document.querySelectorAll('textarea.template_content').forEach(function(textarea) {
-        const editor = CodeMirror.fromTextArea(textarea, {
-            lineNumbers: true,
-            mode: "htmlmixed",
-            theme: "monokai",
-            lineWrapping: true,
-            gutters: ["CodeMirror-lint-markers"],
-            lint: true
-        });
 
-        function checkForErrors() {
-            const tr = textarea.closest('tr');
-            const lintErrors = editor.state.lint.marked.length > 0;
-            if (lintErrors) {
-                // form.style.display = 'none';
-            } else {
-                // form.style.display = 'block';
-            }
-        }
+	document.querySelectorAll('.base-category').forEach(function (baseCheckbox) {
+		baseCheckbox.addEventListener('change', function () {
+			var categoryId = this.getAttribute('data-category-id');
+			var subCategories = document.querySelectorAll('.sub-category[data-parent-id="' + categoryId + '"]');
+			subCategories.forEach(function (subCheckbox) {
+				subCheckbox.disabled = baseCheckbox.checked;
+				if (baseCheckbox.checked) {
+					subCheckbox.checked = false; // Uncheck subcategory if base is checked
+				}
+			});
+		});
+	});
 
-        editor.on('update', checkForErrors);
-        editor.on('change', checkForErrors);
-    });
+	document.querySelectorAll('textarea.template_content').forEach(function (textarea) {
+		const editor = CodeMirror.fromTextArea(textarea, {
+			lineNumbers: true,
+			mode: "htmlmixed",
+			theme: "monokai",
+			lineWrapping: true,
+			gutters: ["CodeMirror-lint-markers"],
+			lint: true
+		});
+
+		function checkForErrors() {
+			const currentTr = textarea.closest('tr');
+			const templateButton = currentTr.querySelector('.template-button');
+			const lintErrors = editor.state.lint.marked.length > 0;
+			if (!lintErrors) {
+				templateButton.style.display = 'block';
+			} else {
+				templateButton.style.display = 'none';
+			}
+		}
+
+		editor.on('update', checkForErrors);
+		editor.on('change', checkForErrors);
+	});
 });
