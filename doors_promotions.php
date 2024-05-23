@@ -248,8 +248,10 @@ function promotions_settings_page() {
                         'hide_empty' => false,
                     ]);
                 
-                    // Create a hierarchical array of categories
+                    // Initialize the hierarchy array
                     $categories_hierarchy = [];
+                    
+                    // First pass: Set up all parent categories
                     foreach ($product_categories as $category) {
                         if ($category->parent == 0) {
                             // This is a base category
@@ -257,25 +259,32 @@ function promotions_settings_page() {
                                 'category' => $category,
                                 'children' => []
                             ];
-                        } else {
-                            // This is a subcategory
-                            if (!isset($categories_hierarchy[$category->parent])) {
-                                $categories_hierarchy[$category->parent] = [
-                                    'category' => null,
-                                    'children' => []
-                                ];
-                            }
-                            $categories_hierarchy[$category->parent]['children'][] = $category;
                         }
                     }
-                
+                    
+                    // Second pass: Attach subcategories to their parents
+                    foreach ($product_categories as $category) {
+                        if ($category->parent != 0) {
+                            // This is a subcategory
+                            if (isset($categories_hierarchy[$category->parent])) {
+                                $categories_hierarchy[$category->parent]['children'][] = $category;
+                            } else {
+                                // Initialize the parent if not already set
+                                $categories_hierarchy[$category->parent] = [
+                                    'category' => null,
+                                    'children' => [$category]
+                                ];
+                            }
+                        }
+                    }
+                    
                     // Display the categories
                     foreach ($categories_hierarchy as $category_info) {
                         if ($category_info['category']) {
                             // Display base category in bold
                             echo '<div class="form-group row"><strong><input type="checkbox" name="promo_categories[]" value="' . esc_attr($category_info['category']->term_id) . '" class="base-category" data-category-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($category_info['category']->term_id) . '">' . esc_html($category_info['category']->name) . '</strong></div>';
                         }
-                
+                    
                         // Display subcategories
                         if (!empty($category_info['children'])) {
                             foreach ($category_info['children'] as $subcategory) {
