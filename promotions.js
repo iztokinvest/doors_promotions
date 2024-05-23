@@ -137,5 +137,7 @@ if (hash) {
 		hash = hash.substring(4);
 		let decodedHash = decodeURIComponent(hash);
 		notifier.success(decodedHash);
+		history.replaceState("", document.title, window.location.pathname + window.location.search);
 	}
 }
+
