@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.3.2
+Version: 1.3.3
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -767,30 +767,11 @@ function remove_admin_notices()
 	remove_all_actions('all_admin_notices');
 }
 
-function add_specific_admin_notice_back()
-{
-	add_action('admin_notices', 'show_admin_message');
-}
-
-function show_admin_message()
-{
-	$message = get_option('promo_message');
-	if ($message) {
-		echo '<div class="notice notice-success is-dismissible">
-                <p>' . esc_html($message) . '</p>
-              </div>';
-		// Delete the option so the message doesn't persist
-		delete_option('promo_message');
-	}
-}
-
 register_activation_hook(__FILE__, 'create_promotions_tables');
 
 initialize_shortcodes();
 
 add_action('admin_init', 'remove_admin_notices');
-add_action('admin_init', 'add_specific_admin_notice_back');
-add_action('admin_notices', 'show_admin_message');
 add_action('admin_enqueue_scripts', 'load_libraries');
 add_action('admin_enqueue_scripts', 'enqueue_promotions_script');
 add_action('admin_menu', 'promotions_menu');
