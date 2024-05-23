@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.3.3
+Version: 1.4.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -221,6 +221,7 @@ function promotions_settings_page()
 			<div class="form-group row">
 				<label for="promo_image" class="col-sm-4 col-form-label">Качи изображение</label>
 				<div class="col-sm-8">
+					<div><input type="checkbox" id="remove-file-upload"> Без файл <span class="text-danger">(маркира се, ако промоцията няма да съдържа изображене)</span></div>
 					<input type="file" class="form-control-file" name="promo_image" id="promo_image" required>
 					<img id="promo_image_preview" src="" alt="Selected Image" style="max-width: 300px; max-height: 300px; display: none;">
 				</div>
@@ -243,7 +244,7 @@ function promotions_settings_page()
 			</div>
 
 			<div class="form-group row">
-				<label for="promo_title" class="col-sm-4 col-form-label">Заглавие</label>
+				<label for="promo_title" class="col-sm-4 col-form-label">Заглавие (alt)</label>
 				<div class="col-sm-8">
 					<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" required>
 				</div>
@@ -354,6 +355,13 @@ function promotions_list_page()
 			</thead>
 			<tbody>
 				<?php foreach ($results as $row) : ?>
+					<?php
+					if ($row->image) {
+						$show_image = '<a target="blank" href="<?php echo esc_url($row->image); ?>"><img src="' . esc_url($row->image) . '" alt="' . esc_html($row->title) . '" class="uploadedImages" style="width: 100px;"></a>';
+					} else {
+						$show_image = '';
+					}
+					?>
 					<tr <?php echo ($row->end_date < date('Y-m-d') ? 'style="opacity: 0.3"' : ''); ?>>
 						<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 							<td><?php echo esc_html($row->id); ?></td>
@@ -371,7 +379,7 @@ function promotions_list_page()
 								?>
 							</td>
 							<td><textarea class="form-control" name="promo_title" id="promo_title"><?php echo esc_html($row->title); ?></textarea></td>
-							<td><a target="blank" href="<?php echo esc_url($row->image); ?>"><img src="<?php echo esc_url($row->image); ?>" alt="<?php echo esc_html($row->title); ?>" class="uploadedImages" style="width: 100px;"></a></td>
+							<td><?php echo $show_image; ?></td>
 							<td><input type="text" class="form-control datepicker-input" name="promo_start_date" id="promo_start_date" value="<?php echo date('d/m/Y', strtotime($row->start_date)); ?>" /></td>
 							<td><input type="text" class="form-control datepicker-input" name="promo_end_date" id="promo_end_date" value="<?php echo date('d/m/Y', strtotime($row->end_date)); ?>" /></td>
 							<td>

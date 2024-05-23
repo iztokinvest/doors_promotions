@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	const promoImageUploadPreview = document.getElementById("promo_image_preview");
 	const uploadedImages = document.querySelectorAll(".uploadedImages");
 	const datepickers = document.querySelectorAll(".datepicker-input");
+	const removeFileUpload = document.getElementById("remove-file-upload");
 
 	(function () {
 		Datepicker.locales.bg = {
@@ -55,12 +56,18 @@ document.addEventListener("DOMContentLoaded", function () {
 		promoImageUploadInput.addEventListener("change", function (event) {
 			const file = event.target.files[0];
 			if (file) {
-				const reader = new FileReader();
-				reader.onload = function (e) {
-					promoImageUploadPreview.src = e.target.result;
-					promoImageUploadPreview.style.display = "block";
-				};
-				reader.readAsDataURL(file);
+				if (file.type === "image/jpeg" || file.type === "image/png") {
+					const reader = new FileReader();
+					reader.onload = function (e) {
+						promoImageUploadPreview.src = e.target.result;
+						promoImageUploadPreview.style.display = "block";
+					};
+					reader.readAsDataURL(file);
+				} else {
+					notifier.warning("Разрешени са само файлове с формат JPG и PNG");
+					promoImageUploadInput.value = null;
+					promoImageUploadPreview.style.display = "none";
+				}
 			}
 		});
 	}
@@ -120,6 +127,16 @@ document.addEventListener("DOMContentLoaded", function () {
 		editor.on("update", checkForErrors);
 		editor.on("change", checkForErrors);
 	});
+
+	if (removeFileUpload) {
+		removeFileUpload.addEventListener("click", function () {
+			const isChecked = removeFileUpload.checked;
+			promoImageUploadInput.style.display = isChecked ? "none" : "";
+			promoImageUploadInput.required = !isChecked;
+			promoImageUploadInput.value = "";
+			promoImageUploadPreview.style.display = "none";
+		})
+	}
 });
 
 const notifier = new AWN({
