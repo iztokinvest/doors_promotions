@@ -83,9 +83,9 @@ document.addEventListener("DOMContentLoaded", function () {
 		});
 	}
 
-	document.querySelectorAll('.base-category').forEach(function (baseCheckbox) {
-		baseCheckbox.addEventListener('change', function () {
-			var categoryId = this.getAttribute('data-category-id');
+	document.querySelectorAll(".base-category").forEach(function (baseCheckbox) {
+		baseCheckbox.addEventListener("change", function () {
+			var categoryId = this.getAttribute("data-category-id");
 			var subCategories = document.querySelectorAll('.sub-category[data-parent-id="' + categoryId + '"]');
 			subCategories.forEach(function (subCheckbox) {
 				subCheckbox.disabled = baseCheckbox.checked;
@@ -96,28 +96,46 @@ document.addEventListener("DOMContentLoaded", function () {
 		});
 	});
 
-	document.querySelectorAll('textarea.template_content').forEach(function (textarea) {
+	document.querySelectorAll("textarea.template_content").forEach(function (textarea) {
 		const editor = CodeMirror.fromTextArea(textarea, {
 			lineNumbers: true,
 			mode: "htmlmixed",
 			theme: "monokai",
 			lineWrapping: true,
 			gutters: ["CodeMirror-lint-markers"],
-			lint: true
+			lint: true,
 		});
 
 		function checkForErrors() {
-			const currentTr = textarea.closest('tr');
-			const templateButton = currentTr.querySelector('.template-button');
+			const currentTr = textarea.closest("tr");
+			const templateButton = currentTr.querySelector(".template-button");
 			const lintErrors = editor.state.lint.marked.length > 0;
 			if (!lintErrors) {
-				templateButton.style.display = 'block';
+				templateButton.style.display = "block";
 			} else {
-				templateButton.style.display = 'none';
+				templateButton.style.display = "none";
 			}
 		}
 
-		editor.on('update', checkForErrors);
-		editor.on('change', checkForErrors);
+		editor.on("update", checkForErrors);
+		editor.on("change", checkForErrors);
 	});
 });
+
+const notifier = new AWN({
+	durations: {
+		global: 5000,
+		position: "bottom-right",
+	},
+});
+
+hash = window.location.hash;
+
+if (hash) {
+	hash = hash.substring(1);
+	if (hash.startsWith("msg=")) {
+		hash = hash.substring(4);
+		let decodedHash = decodeURIComponent(hash);
+		notifier.success(decodedHash);
+	}
+}
