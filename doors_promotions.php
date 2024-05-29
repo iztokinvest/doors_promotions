@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.5.0
+Version: 1.5.1
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -246,7 +246,7 @@ function promotions_settings_page()
 			<div class="form-group row">
 				<label for="promo_title" class="col-sm-4 col-form-label">Заглавие (alt)</label>
 				<div class="col-sm-8">
-					<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" <?php echo isset($_GET['title']) ? 'value=' . $_GET['title']	 : ''; ?> required>
+					<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" <?php echo isset($_GET['title']) ? 'value="' . $_GET['title'] . '"' : ''; ?> required>
 				</div>
 			</div>
 
