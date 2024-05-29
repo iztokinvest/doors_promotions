@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.5.1
+Version: 1.5.2
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -357,7 +357,7 @@ function promotions_list_page()
 				<?php foreach ($results as $row) : ?>
 					<?php
 					if ($row->image) {
-						$show_image = '<a target="blank" href="<?php echo esc_url($row->image); ?>"><img src="' . esc_url($row->image) . '" alt="' . esc_html($row->title) . '" class="uploadedImages" style="width: 100px;"></a>';
+						$show_image = '<a target="blank" href="' . esc_url($row->image) . '"><img src="' . esc_url($row->image) . '" alt="' . esc_html($row->title) . '" class="uploadedImages" style="width: 100px;"></a>';
 					} else {
 						$show_image = '';
 					}
