@@ -45,9 +45,11 @@ document.addEventListener("DOMContentLoaded", function () {
 			const trigger = event.currentTarget;
 
 			if (trigger.value.includes("product")) {
-				promoCategories.style.display = "table";
+				promoCategories.style.display = "flex";
 			} else {
 				promoCategories.style.display = "none";
+				const checkboxes = document.getElementsByName("promo_categories[]");
+				checkboxes.forEach((el) => el.removeAttribute("checked"));
 			}
 		});
 	}
@@ -135,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			promoImageUploadInput.required = !isChecked;
 			promoImageUploadInput.value = "";
 			promoImageUploadPreview.style.display = "none";
-		})
+		});
 	}
 });
 
@@ -157,4 +159,3 @@ if (hash) {
 		history.replaceState("", document.title, window.location.pathname + window.location.search);
 	}
 }
-

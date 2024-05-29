@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.4.0
+Version: 1.5.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -236,7 +236,7 @@ function promotions_settings_page()
 						$shortcodes = fetch_shortcodes_from_db();
 						foreach ($shortcodes as $shortcode => $data) {
 							$name = esc_html($data['name']);
-							echo "<option value='$shortcode'>$name</option>";
+							echo "<option value='$shortcode' " . (isset($_GET['shortcode']) && $_GET['shortcode'] == $shortcode ? 'selected' : '') . ">$name</option>";
 						}
 						?>
 					</select>
@@ -246,7 +246,7 @@ function promotions_settings_page()
 			<div class="form-group row">
 				<label for="promo_title" class="col-sm-4 col-form-label">Заглавие (alt)</label>
 				<div class="col-sm-8">
-					<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" required>
+					<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" <?php echo isset($_GET['title']) ? 'value=' . $_GET['title']	 : ''; ?> required>
 				</div>
 			</div>
 
@@ -264,7 +264,7 @@ function promotions_settings_page()
 				</div>
 			</div>
 
-			<div class="form-group row" id="promo_categories" style="display:none">
+			<div class="form-group row" id="promo_categories" style="<?php echo isset($_GET['category']) && $_GET['category'] > 0 ? '' : 'display:none"'; ?>">
 				<label class="col-sm-2 col-form-label">Избери категории</label>
 				<div class="col-sm-8">
 					<?php
@@ -307,13 +307,13 @@ function promotions_settings_page()
 					foreach ($categories_hierarchy as $category_info) {
 						if ($category_info['category']) {
 							// Display base category in bold
-							echo '<div class="form-group row"><strong><input type="checkbox" name="promo_categories[]" value="' . esc_attr($category_info['category']->term_id) . '" class="base-category" data-category-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($category_info['category']->term_id) . '">' . esc_html($category_info['category']->name) . '</strong></div>';
+							echo '<div class="form-group row"><strong><input type="checkbox" name="promo_categories[]" value="' . esc_attr($category_info['category']->term_id) . '" class="base-category" data-category-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($category_info['category']->term_id) . '" ' . (isset($_GET['category']) && $_GET['category'] == esc_attr($category_info['category']->term_id) ? 'checked' : '') . '>' . esc_html($category_info['category']->name) . '</strong></div>';
 						}
 
 						// Display subcategories
 						if (!empty($category_info['children'])) {
 							foreach ($category_info['children'] as $subcategory) {
-								echo '<div class="form-group row" style="padding-left: 20px;"><input type="checkbox" name="promo_categories[]" value="' . esc_attr($subcategory->term_id) . '" class="sub-category" data-parent-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($subcategory->term_id) . '">' . esc_html($subcategory->name) . '</div>';
+								echo '<div class="form-group row" style="padding-left: 20px;"><input type="checkbox" name="promo_categories[]" value="' . esc_attr($subcategory->term_id) . '" class="sub-category" data-parent-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($subcategory->term_id) . '" ' . (isset($_GET['category']) && $_GET['category'] == esc_attr($subcategory->term_id) ? 'checked' : '') . '>' . esc_html($subcategory->name) . '</div>';
 							}
 						}
 					}
@@ -350,7 +350,7 @@ function promotions_list_page()
 					<th>Изображение</th>
 					<th>Начална дата</th>
 					<th>Крайна дата</th>
-					<th>Действия</th>
+					<th colspan="3">Действия</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -365,7 +365,7 @@ function promotions_list_page()
 					<tr <?php echo ($row->end_date < date('Y-m-d') ? 'style="opacity: 0.3"' : ''); ?>>
 						<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 							<td><?php echo esc_html($row->id); ?></td>
-							<td><?php $row->category ? get_term($row->category)->name : ''; ?></td>
+							<td><?php echo $row->category ? get_term($row->category)->name : ''; ?></td>
 							<td>
 								<?php
 								echo '<select name="promo_shortcode" id="promo_shortcode">';
@@ -388,6 +388,15 @@ function promotions_list_page()
 								<button type="submit" class="btn btn-primary">Редактирай</button>
 							</td>
 						</form>
+						<td>
+							<form method="get">
+								<input type="hidden" name="page" value="promotions_settings">
+								<input type="hidden" name="category" value="<?php echo esc_attr($row->category); ?>">
+								<input type="hidden" name="shortcode" value="<?php echo esc_attr($row->shortcode); ?>">
+								<input type="hidden" name="title" value="<?php echo esc_attr($row->title); ?>">
+								<button type="submit" class="btn btn-success">Дублирай</button>
+							</form>
+						</td>
 						<td>
 							<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 								<input type="hidden" name="action" value="delete_promo">
