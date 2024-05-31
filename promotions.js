@@ -76,19 +76,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	if (uploadedImages.length > 0) {
 		uploadedImages.forEach((image) => {
-			const filename = image.src.split("/").pop().split(".").pop();
+			const parts = image.src.split("/");
+			const filenameWithExtension = parts[parts.length - 1];
+			const filenameParts = filenameWithExtension.split(".");
+			const extension = filenameParts[filenameParts.length - 1];
 			const width = image.naturalWidth;
 			const height = image.naturalHeight;
 
-			const infoText = `${filename} - ${width}x${height}`;
+			const infoText = `${extension} - ${width}x${height}`;
 			const textNode = document.createTextNode(infoText);
 
 			// Create a new element to hold the text information
 			const infoDiv = document.createElement("div");
+			infoDiv.classList.add("image-info");
+			infoDiv.setAttribute("data-filename", filenameWithExtension);
 			infoDiv.appendChild(textNode);
 
-			// Insert the new div after the image
 			image.closest("td").insertBefore(infoDiv, image.nextSibling);
+
+			const imageInfoElement = document.querySelector(".image-info");
+			imageInfoElement.addEventListener("click", function () {
+				const filename = imageInfoElement.getAttribute("data-filename");
+
+				// Copy the filename to the clipboard
+				navigator.clipboard
+					.writeText(filename)
+					.then(() => {
+						notifier.success(`Името файла ${filename} е копирано в клипборда.`);
+					})
+					.catch((err) => {
+						notifier.alert(`Грешка при копиране на името на файла: ${err}`);
+					});
+			});
 		});
 	}
 
