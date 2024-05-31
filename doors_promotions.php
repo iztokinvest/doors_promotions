@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.6.0
+Version: 1.6.1
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -340,7 +340,7 @@ function promotions_list_page()
 ?>
 	<div class="wrap">
 		<h1>Списък с промоции</h1>
-		<table class="table table-striped">
+		<table id="promotions-list-table" class="table table-striped">
 			<thead>
 				<tr>
 					<th>ID</th>
@@ -362,7 +362,7 @@ function promotions_list_page()
 						$show_image = '';
 					}
 					?>
-					<tr <?php echo ($row->end_date < date('Y-m-d') ? 'style="opacity: 0.3"' : ''); ?>>
+					<tr <?php echo ($row->end_date < date('Y-m-d') ? 'style="background: #ff000040"' : ''); ?>>
 						<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 							<td><?php echo esc_html($row->id); ?></td>
 							<td><?php echo $row->category ? get_term($row->category)->name : ''; ?></td>

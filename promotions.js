@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	const uploadedImages = document.querySelectorAll(".uploadedImages");
 	const datepickers = document.querySelectorAll(".datepicker-input");
 	const removeFileUpload = document.getElementById("remove-file-upload");
+	const promotionsListTable = document.getElementById("promotions-list-table");
 
 	(function () {
 		Datepicker.locales.bg = {
@@ -93,21 +94,6 @@ document.addEventListener("DOMContentLoaded", function () {
 			infoDiv.appendChild(textNode);
 
 			image.closest("td").insertBefore(infoDiv, image.nextSibling);
-
-			const imageInfoElement = document.querySelector(".image-info");
-			imageInfoElement.addEventListener("click", function () {
-				const filename = imageInfoElement.getAttribute("data-filename");
-
-				// Copy the filename to the clipboard
-				navigator.clipboard
-					.writeText(filename)
-					.then(() => {
-						notifier.success(`Името файла ${filename} е копирано в клипборда.`);
-					})
-					.catch((err) => {
-						notifier.alert(`Грешка при копиране на името на файла: ${err}`);
-					});
-			});
 		});
 	}
 
@@ -156,6 +142,29 @@ document.addEventListener("DOMContentLoaded", function () {
 			promoImageUploadInput.required = !isChecked;
 			promoImageUploadInput.value = "";
 			promoImageUploadPreview.style.display = "none";
+		});
+	}
+
+	if (promotionsListTable) {
+		promotionsListTable.addEventListener("click", function (event) {
+			const target = event.target;
+
+			if (target.classList.contains("image-info")) {
+				const filename = target.getAttribute("data-filename");
+
+				navigator.clipboard
+					.writeText(filename)
+					.then(() => {
+						if (notifier.clear) {
+							notifier.clear();
+						}
+
+						notifier.success(`Името файла ${filename} е копирано в клипборда.`);
+					})
+					.catch((err) => {
+						notifier.alert(`Грешка при копиране на името на файла: ${err}`);
+					});
+			}
 		});
 	}
 });
