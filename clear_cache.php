@@ -1,6 +1,6 @@
 <?php
 
-require('../../../wp-load.php');
+require(__DIR__ . '/../../../wp-load.php');
 
 // Clear WP Rocket cache
 if (function_exists('rocket_clean_domain')) {
