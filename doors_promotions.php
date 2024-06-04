@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.6.1
+Version: 1.7.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -100,6 +100,30 @@ class WP_Promotions_Updater
 if (is_admin()) {
 	new WP_Promotions_Updater(__FILE__);
 }
+
+// Enqueue Thickbox scripts and styles in the admin area
+function enqueue_thickbox_for_plugin()
+{
+	if (is_admin()) {
+		wp_enqueue_script('thickbox');
+		wp_enqueue_style('thickbox');
+	}
+}
+add_action('admin_enqueue_scripts', 'enqueue_thickbox_for_plugin');
+
+// Add custom meta links to plugin row
+function my_plugin_row_meta($links, $file)
+{
+	// Make sure it’s your plugin
+	if ($file == plugin_basename(__FILE__)) {
+		$new_links = array(
+			'<a href="' . plugins_url('details-popup.php', __FILE__) . '?TB_iframe=true&width=600&height=550" class="thickbox">' . __('Още детайли', 'your-plugin-textdomain') . '</a>',
+		);
+		$links = array_merge($links, $new_links);
+	}
+	return $links;
+}
+add_filter('plugin_row_meta', 'my_plugin_row_meta', 10, 2);
 
 function load_libraries($hook)
 {
