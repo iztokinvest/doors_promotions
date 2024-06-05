@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.7.2
+Version: 1.8.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -100,30 +100,6 @@ class WP_Promotions_Updater
 if (is_admin()) {
 	new WP_Promotions_Updater(__FILE__);
 }
-
-// Enqueue Thickbox scripts and styles in the admin area
-function enqueue_thickbox_for_plugin()
-{
-	if (is_admin()) {
-		wp_enqueue_script('thickbox');
-		wp_enqueue_style('thickbox');
-	}
-}
-add_action('admin_enqueue_scripts', 'enqueue_thickbox_for_plugin');
-
-// Add custom meta links to plugin row
-function my_plugin_row_meta($links, $file)
-{
-	// Make sure it’s your plugin
-	if ($file == plugin_basename(__FILE__)) {
-		$new_links = array(
-			'<a href="' . plugins_url('details-popup.php', __FILE__) . '?TB_iframe=true&width=600&height=550" class="thickbox">' . __('Още детайли', 'your-plugin-textdomain') . '</a>',
-		);
-		$links = array_merge($links, $new_links);
-	}
-	return $links;
-}
-add_filter('plugin_row_meta', 'my_plugin_row_meta', 10, 2);
 
 function load_libraries($hook)
 {
@@ -224,8 +200,58 @@ function handle_shortcode($atts, $shortcode)
 	return '';
 }
 
+function clear_cache_if_needed()
+{
+	$site_directory = basename(ABSPATH);
+	$site_directory_path = explode('//', get_site_url());
+
+	// Define paths to cache folders
+	$cache_folders = [
+		'wp-rocket' => WP_CONTENT_DIR . "/cache/wp-rocket/{$site_directory_path[1]}/",
+		'wp-fastest-cache' => WP_CONTENT_DIR . "/cache/all/{$site_directory}/",
+	];
+
+	$cache_needs_clearing = false;
+
+	foreach ($cache_folders as $folder) {
+		if (is_dir($folder)) {
+			$last_modified_time = filemtime($folder);
+			$last_modified_date = date('Y-m-d', $last_modified_time);
+			$current_date = date('Y-m-d');
+
+			if ($last_modified_date !== $current_date) {
+				$cache_needs_clearing = true;
+				break;
+			}
+		}
+	}
+
+	if ($cache_needs_clearing) {
+		clear_cache();
+	}
+}
+
+function clear_cache()
+{
+	// Clear WP Rocket cache
+	if (function_exists('rocket_clean_domain')) {
+		rocket_clean_domain();
+	}
+	if (function_exists('rocket_clean_minify')) {
+		rocket_clean_minify();
+	}
+
+	// WP Fastest Cache
+	if (function_exists('wpfc_clear_all_cache')) {
+		wpfc_clear_all_cache(true);
+		
+	}
+}
+
 function initialize_shortcodes()
 {
+	// var_dump(33334); die();
+	clear_cache_if_needed();
 	$shortcodes = fetch_shortcodes_from_db();
 	foreach ($shortcodes as $shortcode => $data) {
 		add_shortcode($shortcode, function ($atts) use ($shortcode) {
@@ -561,6 +587,8 @@ function handle_promotions_form()
 			);
 		}
 
+		clear_cache();
+
 		// Пренасочи, за да избегнеш повторно изпращане на формата
 		wp_redirect(admin_url('admin.php?page=promotions#msg=Банерът е качен'));
 		exit;
@@ -590,6 +618,8 @@ function handle_edit_promo()
 				'id' => $promo_id
 			]
 		);
+
+		clear_cache();
 
 		wp_redirect(admin_url('admin.php?page=promotions#msg=Успешно редактиране.'));
 		exit;
@@ -622,6 +652,8 @@ function handle_delete_promo()
 				}
 			}
 		}
+
+		clear_cache();
 
 		// Пренасочи, за да избегнеш повторно изпращане на формата
 		wp_redirect(admin_url('admin.php?page=promotions#msg=Банерът е изтрит'));
@@ -659,6 +691,8 @@ function handle_delete_expired()
 			}
 		}
 
+		clear_cache();
+
 		// Redirect to avoid form resubmission
 		wp_redirect(admin_url('admin.php?page=promotions#msg=Банерите са изтрити'));
 		exit;
@@ -686,6 +720,8 @@ function handle_add_new_template()
 				'template_content' => $template_content
 			]
 		);
+
+		clear_cache();
 
 		wp_redirect(admin_url('admin.php?page=promotions_templates#msg=Шабонът е добавен'));
 		exit;
@@ -716,6 +752,8 @@ function handle_update_template()
 			['id' => $promo_id]
 		);
 
+		clear_cache();
+
 		wp_redirect(admin_url('admin.php?page=promotions_templates#msg=Шаблонът е редактиран'));
 		exit;
 	} else {
@@ -732,6 +770,8 @@ function handle_delete_template()
 		$promo_id = intval($_POST['promo_id']);
 
 		$wpdb->delete($table_name, array('id' => $promo_id));
+
+		clear_cache();
 
 		wp_redirect(admin_url('admin.php?page=promotions_templates#msg=Шаблонът е изтрит'));
 		exit;
@@ -810,7 +850,7 @@ function remove_admin_notices()
 
 register_activation_hook(__FILE__, 'create_promotions_tables');
 
-initialize_shortcodes();
+add_action('init', 'initialize_shortcodes', 20);
 
 add_action('admin_init', 'remove_admin_notices');
 add_action('admin_enqueue_scripts', 'load_libraries');
