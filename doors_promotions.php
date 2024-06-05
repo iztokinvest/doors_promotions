@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.8.0
+Version: 1.8.1
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -215,11 +215,12 @@ function clear_cache_if_needed()
 
 	foreach ($cache_folders as $folder) {
 		if (is_dir($folder)) {
-			$last_modified_time = filemtime($folder);
-			$last_modified_date = date('Y-m-d', $last_modified_time);
+			$stat = stat($folder);
+			$creation_time = $stat['ctime'];
+			$creation_date = date('Y-m-d', $creation_time);
 			$current_date = date('Y-m-d');
 
-			if ($last_modified_date !== $current_date) {
+			if ($creation_date !== $current_date) {
 				$cache_needs_clearing = true;
 				break;
 			}
