@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.8.1
+Version: 1.8.2
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -245,7 +245,6 @@ function clear_cache()
 	// WP Fastest Cache
 	if (function_exists('wpfc_clear_all_cache')) {
 		wpfc_clear_all_cache(true);
-		
 	}
 }
 
@@ -413,7 +412,8 @@ function promotions_list_page()
 						$show_image = '';
 					}
 					?>
-					<tr <?php echo ($row->end_date < date('Y-m-d') ? 'style="background: #ff000040"' : ''); ?>>
+					<tr <?php echo ($row->end_date < date('Y-m-d') ? 'style="background: #ff000040"' : '');
+						echo ($row->end_date < date('Y-m-d', strtotime('+5 days')) ? 'style="background: #ffff0040"' : ''); ?>>
 						<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 							<td><?php echo esc_html($row->id); ?></td>
 							<td><?php echo $row->category ? get_term($row->category)->name : ''; ?></td>
