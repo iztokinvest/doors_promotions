@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.8.2
+Version: 1.8.3
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -384,6 +384,11 @@ function promotions_settings_page()
 function promotions_list_page()
 {
 	global $wpdb;
+	$rows_count = [
+		'active' => 0,
+		'expiring' => 0,
+		'expired' => 0
+	];
 	$table_name = $wpdb->prefix . 'doors_promotions';
 	$results = $wpdb->get_results("SELECT * FROM $table_name ORDER BY end_date DESC");
 
@@ -411,11 +416,28 @@ function promotions_list_page()
 					} else {
 						$show_image = '';
 					}
+
+					
+					switch (true) {
+						case $row->end_date < date('Y-m-d'):
+							$row_color = 'style="background: #ff000040"';
+							$row_status = 'expired';
+							$rows_count['expired'] ++;
+							break;
+						case $row->end_date < date('Y-m-d', strtotime('+5 days')):
+							$row_color = 'style="background: #ffff0040"';
+							$row_status = 'expiring';
+							$rows_count['expiring'] ++;
+							break;
+						default:
+							$row_color = '';
+							$row_status = 'active';
+							$rows_count['active'] ++;
+					}
 					?>
-					<tr <?php echo ($row->end_date < date('Y-m-d') ? 'style="background: #ff000040"' : '');
-						echo ($row->end_date < date('Y-m-d', strtotime('+5 days')) ? 'style="background: #ffff0040"' : ''); ?>>
+					<tr <?php echo $row_color; ?>>
 						<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-							<td><?php echo esc_html($row->id); ?></td>
+							<td><?php echo $rows_count[$row_status]; ?></td>
 							<td><?php echo $row->category ? get_term($row->category)->name : ''; ?></td>
 							<td>
 								<?php
