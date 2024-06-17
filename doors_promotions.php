@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.8.3
+Version: 1.8.4
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -208,7 +208,7 @@ function clear_cache_if_needed()
 	// Define paths to cache folders
 	$cache_folders = [
 		'wp-rocket' => WP_CONTENT_DIR . "/cache/wp-rocket/{$site_directory_path[1]}/",
-		'wp-fastest-cache' => WP_CONTENT_DIR . "/cache/all/{$site_directory}/",
+		'wp-fastest-cache' => WP_CONTENT_DIR . "/cache/all/",
 	];
 
 	$cache_needs_clearing = false;
