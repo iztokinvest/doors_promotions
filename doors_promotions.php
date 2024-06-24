@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.8.4
+Version: 1.9.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -186,8 +186,8 @@ function handle_shortcode($atts, $shortcode)
 
 	$product_categories = $product ? $product->get_category_ids() : [];
 
-	$query = "SELECT * FROM $table_name WHERE shortcode = %s AND start_date <= %s AND end_date >= %s";
-	$params = [$shortcode, $current_date, $current_date];
+	$query = "SELECT * FROM $table_name WHERE shortcode = %s AND start_date <= %s AND end_date >= %s AND active = %d";
+	$params = [$shortcode, $current_date, $current_date, 1];
 
 	$promotions = $wpdb->get_results($wpdb->prepare($query, $params));
 
@@ -314,6 +314,13 @@ function promotions_settings_page()
 				</div>
 			</div>
 
+			<div class="form-group row">
+				<label for="active_banner" class="col-sm-4 col-form-label">Активен</label>
+				<div class="col-sm-8">
+					<input type="checkbox" class="form-control" name="active_banner" id="active_banner" checked />
+				</div>
+			</div>
+
 			<div class="form-group row" id="promo_categories" style="<?php echo isset($_GET['category']) && $_GET['category'] > 0 ? '' : 'display:none"'; ?>">
 				<label class="col-sm-2 col-form-label">Избери категории</label>
 				<div class="col-sm-8">
@@ -405,6 +412,7 @@ function promotions_list_page()
 					<th>Изображение</th>
 					<th>Начална дата</th>
 					<th>Крайна дата</th>
+					<th>Активен</th>
 					<th colspan="3">Действия</th>
 				</tr>
 			</thead>
@@ -417,22 +425,22 @@ function promotions_list_page()
 						$show_image = '';
 					}
 
-					
+
 					switch (true) {
 						case $row->end_date < date('Y-m-d'):
 							$row_color = 'style="background: #ff000040"';
 							$row_status = 'expired';
-							$rows_count['expired'] ++;
+							$rows_count['expired']++;
 							break;
 						case $row->end_date < date('Y-m-d', strtotime('+5 days')):
 							$row_color = 'style="background: #ffff0040"';
 							$row_status = 'expiring';
-							$rows_count['expiring'] ++;
+							$rows_count['expiring']++;
 							break;
 						default:
 							$row_color = '';
 							$row_status = 'active';
-							$rows_count['active'] ++;
+							$rows_count['active']++;
 					}
 					?>
 					<tr <?php echo $row_color; ?>>
@@ -455,6 +463,7 @@ function promotions_list_page()
 							<td><?php echo $show_image; ?></td>
 							<td><input type="text" class="form-control datepicker-input" name="promo_start_date" id="promo_start_date" value="<?php echo date('d/m/Y', strtotime($row->start_date)); ?>" /></td>
 							<td><input type="text" class="form-control datepicker-input" name="promo_end_date" id="promo_end_date" value="<?php echo date('d/m/Y', strtotime($row->end_date)); ?>" /></td>
+							<td><input type="checkbox" name="promo_active" id="promo_active" <?php echo ($row->active) ? 'checked' : ''; ?> /></td>
 							<td>
 								<input type="hidden" name="action" value="edit_promo">
 								<input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
@@ -481,7 +490,11 @@ function promotions_list_page()
 				<?php endforeach; ?>
 			</tbody>
 		</table>
-		<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+		<form class="d-inline" method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+			<input type="hidden" name="action" value="activate_all">
+			<button type="submit" class="btn btn-success">Активирай неактивните</button>
+		</form>
+		<form class="d-inline" method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 			<input type="hidden" name="action" value="delete_expired">
 			<button type="submit" class="btn btn-danger">Изтрий приключените</button>
 		</form>
@@ -562,6 +575,7 @@ function handle_promotions_form()
 		$promo_shortcode = sanitize_text_field($_POST['promo_shortcode']);
 		$promo_start_date = date_format(date_create_from_format('d/m/Y', sanitize_text_field($_POST['promo_start_date'])), 'Y-m-d');
 		$promo_end_date = date_format(date_create_from_format('d/m/Y', sanitize_text_field($_POST['promo_end_date'])), 'Y-m-d');
+		$active_banner = $_POST['active_banner'] == 'on' ? '1' : '0';
 		$upload_dir = wp_upload_dir();
 		$promo_image = '';
 
@@ -593,7 +607,8 @@ function handle_promotions_form()
 						'shortcode' => $promo_shortcode,
 						'image' => $promo_image,
 						'start_date' => $promo_start_date,
-						'end_date' => $promo_end_date
+						'end_date' => $promo_end_date,
+						'active' => $active_banner
 					)
 				);
 			}
@@ -605,7 +620,8 @@ function handle_promotions_form()
 					'shortcode' => $promo_shortcode,
 					'image' => $promo_image,
 					'start_date' => $promo_start_date,
-					'end_date' => $promo_end_date
+					'end_date' => $promo_end_date,
+					'active' => $active_banner
 				)
 			);
 		}
@@ -628,6 +644,7 @@ function handle_edit_promo()
 		$promo_shortcode = sanitize_text_field($_POST['promo_shortcode']);
 		$promo_start_date = date_format(date_create_from_format('d/m/Y', sanitize_text_field($_POST['promo_start_date'])), 'Y-m-d');
 		$promo_end_date = date_format(date_create_from_format('d/m/Y', sanitize_text_field($_POST['promo_end_date'])), 'Y-m-d');
+		$promo_active = $_POST['promo_active'] == 'on' ? '1' : '0';
 
 		$wpdb->update(
 			$table_name,
@@ -636,6 +653,7 @@ function handle_edit_promo()
 				'shortcode' => $promo_shortcode,
 				'start_date' => $promo_start_date,
 				'end_date' => $promo_end_date,
+				'active' => $promo_active
 			],
 			[
 				'id' => $promo_id
@@ -721,6 +739,30 @@ function handle_delete_expired()
 		exit;
 	} else {
 		// For debugging
+		var_dump($_POST);
+		exit;
+	}
+}
+
+function handle_activate_all()
+{
+	if (isset($_POST['action']) && $_POST['action'] == 'activate_all') {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'doors_promotions';
+
+		$sql = $wpdb->prepare(
+			"UPDATE $table_name SET active = %d WHERE active = %d AND end_date > %s",
+			1,
+			0,
+			current_time('mysql')
+		);
+
+		$wpdb->query($sql);
+
+		clear_cache();
+		wp_redirect(admin_url('admin.php?page=promotions#msg=Неактивните банери са активирани'));
+		exit;
+	} else {
 		var_dump($_POST);
 		exit;
 	}
@@ -863,6 +905,12 @@ function create_promotions_tables()
 	require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 	dbDelta($sql_promotions);
 	dbDelta($sql_templates);
+
+	// Check if 'active' column exists, and add it if it doesn't
+	$column = $wpdb->get_results("SHOW COLUMNS FROM $promotions_table LIKE 'active'");
+	if (empty($column)) {
+		$wpdb->query("ALTER TABLE $promotions_table ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1");
+	}
 }
 
 function remove_admin_notices()
@@ -883,6 +931,7 @@ add_action('admin_post_submit_promo', 'handle_promotions_form');
 add_action('admin_post_edit_promo', 'handle_edit_promo');
 add_action('admin_post_delete_promo', 'handle_delete_promo');
 add_action('admin_post_delete_expired', 'handle_delete_expired');
+add_action('admin_post_activate_all', 'handle_activate_all');
 add_action('admin_post_add_new_template', 'handle_add_new_template');
 add_action('admin_post_update_template', 'handle_update_template');
 add_action('admin_post_delete_template', 'handle_delete_template');
