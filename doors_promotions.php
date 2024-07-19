@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.9.0
+Version: 1.10.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -140,6 +140,14 @@ function enqueue_promotions_script()
 	wp_enqueue_script('vanillajs-datepicker-js', 'https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker.min.js', array(), null, true);
 }
 
+function enqueue_countdown_timer_script()
+{
+	if (!is_admin()) {
+		wp_enqueue_script('countdown-timer', plugins_url('/assets/js/countdown_timer.js', __FILE__), array(), false, true);
+	}
+}
+add_action('wp_enqueue_scripts', 'enqueue_countdown_timer_script');
+
 function fetch_shortcodes_from_db()
 {
 	global $wpdb;
@@ -167,11 +175,11 @@ function load_shortcode_template($content, $placeholders)
 	return $content;
 }
 
-function shortcodes($image, $alt)
+function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds)
 {
 	$shortcodes = [];
 	foreach (fetch_shortcodes_from_db() as $key => $data) {
-		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt]);
+		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds]);
 	}
 
 	return $shortcodes;
@@ -191,9 +199,14 @@ function handle_shortcode($atts, $shortcode)
 
 	$promotions = $wpdb->get_results($wpdb->prepare($query, $params));
 
+	$timer_days = '<span id="timer-days" data-end-date="' . $promotions[0]->end_date . '"></span>';
+	$timer_hours = '<span id="timer-hours" data-end-date="' . $promotions[0]->end_date . '"></span>';
+	$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promotions[0]->end_date . '"></span>';
+	$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promotions[0]->end_date . '"></span>';
+
 	foreach ($promotions as $promo) {
 		if (is_null($promo->category) || in_array($promo->category, $product_categories)) {
-			return shortcodes(esc_url($promo->image), esc_attr($promo->title))[$shortcode];
+			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds)[$shortcode];
 		}
 	}
 
@@ -529,7 +542,7 @@ function promotions_templates_page()
 							<p class="text-warning">Добавяне на нов шаблон. За продукт с категории трябва да присъства думата "product".</p>
 						</td>
 						<td class="w-25"><input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required></td>
-						<td><textarea class="form-control template_content" name="template_content"></textarea></td>
+						<td style="text-align:left"><textarea class="form-control template_content" name="template_content"></textarea></td>
 						<td colspan="2">
 							<input type="hidden" name="action" value="add_new_template">
 							<button type="submit" class="btn btn-success template-button" style="display:none;">Добави</button>
@@ -542,7 +555,7 @@ function promotions_templates_page()
 							<td><?php echo esc_html($row->id); ?></td>
 							<td><input type="text" name="shortcode" value="<?php echo esc_html($row->shortcode); ?>"></td>
 							<td><input type="text" name="shortcode_name" value="<?php echo esc_html($row->shortcode_name); ?>"></td>
-							<td><textarea class="form-control template_content" name="template_content"><?php echo esc_html($row->template_content); ?></textarea></td>
+							<td style="text-align:left"><textarea class="form-control template_content" name="template_content"><?php echo esc_html($row->template_content); ?></textarea></td>
 							<td>
 								<input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
 								<input type="hidden" name="action" value="update_template">
@@ -560,6 +573,14 @@ function promotions_templates_page()
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+		<ul>
+			<li><b>[image]</b> Адрес на банер</li>
+			<li><b>[alt]</b> Описание на банер</li>
+			<li><b>[timer-days]</b> Оставащи дни от промоцията</li>
+			<li><b>[timer-hours]</b> Оставащи часове от промоцията</li>
+			<li><b>[timer-minutes]</b> Оставащи минути от промоцията</li>
+			<li><b>[timer-seconds]</b> Оставащи секунди от промоцията</li>
+		</ul>
 	</div>
 <?php
 }
