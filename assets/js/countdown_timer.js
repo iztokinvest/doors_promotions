@@ -38,39 +38,39 @@ document.addEventListener("DOMContentLoaded", function () {
 			if (daysElement) {
 				daysElement.innerHTML =
 					days > 0
-						? `<span class="days-number">${days}</span><span class="days-title">${getPluralForm(
+						? `<span class="days-number">${days}</span>${getPluralForm(
 								days,
 								" <span class='days-title'>ден</span>",
 								" <span class='days-title'>дни</span>"
-						  )}</span>`
+						  )}`
 						: "";
 			}
 			if (hoursElement) {
 				hoursElement.innerHTML =
 					hours > 0
-						? `<span class="hours-number">${hours}</span><span class="hours-title">${getPluralForm(
+						? `<span class="hours-number">${hours}</span>${getPluralForm(
 								hours,
 								" <span class='hours-title'>час</span>",
 								" <span class='hours-title'>часа</span>"
-						  )}</span>`
+						  )}`
 						: "";
 			}
 			if (minutesElement) {
 				minutesElement.innerHTML =
 					minutes > 0
-						? `<span class="minutes-number">${minutes}</span><span class="minutes-title">${getPluralForm(
+						? `<span class="minutes-number">${minutes}</span>${getPluralForm(
 								minutes,
 								" <span class='minutes-title'>минута</span>",
 								" <span class='minutes-title'>минути</span>"
-						  )}</span>`
+						  )}`
 						: "";
 			}
 			if (secondsElement) {
-				secondsElement.innerHTML = `<span class="seconds-number">${seconds}</span><span class="seconds-title">${getPluralForm(
+				secondsElement.innerHTML = `<span class="seconds-number">${seconds}</span>${getPluralForm(
 					seconds,
 					" <span class='seconds-title'>секунда</span>",
 					" <span class='seconds-title'>секунди</span>"
-				)}</span>`;
+				)}`;
 			}
 
 			if (distance < 0) {
