@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.10.3
+Version: 1.10.4
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -200,10 +200,10 @@ function handle_shortcode($atts, $shortcode)
 	$promotions = $wpdb->get_results($wpdb->prepare($query, $params));
 
 	if ($promotions) {
-		$timer_days = '<span class="timer-days" data-end-date="' . $promotions[0]->end_date . '"></span>';
-		$timer_hours = '<span class="timer-hours" data-end-date="' . $promotions[0]->end_date . '"></span>';
-		$timer_minutes = '<span class="timer-minutes" data-end-date="' . $promotions[0]->end_date . '"></span>';
-		$timer_seconds = '<span class="timer-seconds" data-end-date="' . $promotions[0]->end_date . '"></span>';
+		$timer_days = '<span id="timer-days" data-end-date="' . $promotions[0]->end_date . '"></span>';
+		$timer_hours = '<span id="timer-hours" data-end-date="' . $promotions[0]->end_date . '"></span>';
+		$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promotions[0]->end_date . '"></span>';
+		$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promotions[0]->end_date . '"></span>';
 	}
 
 	foreach ($promotions as $promo) {
