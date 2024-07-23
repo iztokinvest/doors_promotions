@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.10.5
+Version: 1.10.6
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -199,15 +199,13 @@ function handle_shortcode($atts, $shortcode)
 
 	$promotions = $wpdb->get_results($wpdb->prepare($query, $params));
 
-	if ($promotions) {
-		$timer_days = '<span id="timer-days" data-end-date="' . $promotions[0]->end_date . '"></span>';
-		$timer_hours = '<span id="timer-hours" data-end-date="' . $promotions[0]->end_date . '"></span>';
-		$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promotions[0]->end_date . '"></span>';
-		$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promotions[0]->end_date . '"></span>';
-	}
-
 	foreach ($promotions as $promo) {
 		if (is_null($promo->category) || in_array($promo->category, $product_categories)) {
+			$timer_days = '<span id="timer-days" data-end-date="' . $promo->end_date . '"></span>';
+			$timer_hours = '<span id="timer-hours" data-end-date="' . $promo->end_date . '"></span>';
+			$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promo->end_date . '"></span>';
+			$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promo->end_date . '"></span>';
+
 			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds)[$shortcode];
 		}
 	}

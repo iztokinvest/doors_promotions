@@ -36,34 +36,25 @@ document.addEventListener("DOMContentLoaded", function () {
 			const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
 			if (daysElement) {
-				daysElement.innerHTML =
-					days > 0
-						? `<span class="days-number">${days}</span>${getPluralForm(
-								days,
-								" <span class='days-title'>ден</span>",
-								" <span class='days-title'>дни</span>"
-						  )}`
-						: "";
+				daysElement.innerHTML = `<span class="days-number">${days}</span>${getPluralForm(
+					days,
+					" <span class='days-title'>ден</span>",
+					" <span class='days-title'>дни</span>"
+				)}`;
 			}
 			if (hoursElement) {
-				hoursElement.innerHTML =
-					hours > 0
-						? `<span class="hours-number">${hours}</span>${getPluralForm(
-								hours,
-								" <span class='hours-title'>час</span>",
-								" <span class='hours-title'>часа</span>"
-						  )}`
-						: "";
+				hoursElement.innerHTML = `<span class="hours-number">${hours}</span>${getPluralForm(
+					hours,
+					" <span class='hours-title'>час</span>",
+					" <span class='hours-title'>часа</span>"
+				)}`;
 			}
 			if (minutesElement) {
-				minutesElement.innerHTML =
-					minutes > 0
-						? `<span class="minutes-number">${minutes}</span>${getPluralForm(
-								minutes,
-								" <span class='minutes-title'>минута</span>",
-								" <span class='minutes-title'>минути</span>"
-						  )}`
-						: "";
+				minutesElement.innerHTML = `<span class="minutes-number">${minutes}</span>${getPluralForm(
+					minutes,
+					" <span class='minutes-title'>минута</span>",
+					" <span class='minutes-title'>минути</span>"
+				)}`;
 			}
 			if (secondsElement) {
 				secondsElement.innerHTML = `<span class="seconds-number">${seconds}</span>${getPluralForm(
