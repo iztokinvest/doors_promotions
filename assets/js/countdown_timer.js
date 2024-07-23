@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			if (daysElement) {
 				daysElement.innerHTML =
 					days > 0
-						? `<span class="days-number">${days}</span><span id="days-title">${getPluralForm(
+						? `<span class="days-number">${days}</span><span class="days-title">${getPluralForm(
 								days,
 								" <span class='days-title'>ден</span>",
 								" <span class='days-title'>дни</span>"
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			if (hoursElement) {
 				hoursElement.innerHTML =
 					hours > 0
-						? `<span class="hours-number">${hours}</span><span id="hours-title">${getPluralForm(
+						? `<span class="hours-number">${hours}</span><span class="hours-title">${getPluralForm(
 								hours,
 								" <span class='hours-title'>час</span>",
 								" <span class='hours-title'>часа</span>"
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			if (minutesElement) {
 				minutesElement.innerHTML =
 					minutes > 0
-						? `<span class="minutes-number">${minutes}</span><span id="minutes-title">${getPluralForm(
+						? `<span class="minutes-number">${minutes}</span><span class="minutes-title">${getPluralForm(
 								minutes,
 								" <span class='minutes-title'>минута</span>",
 								" <span class='minutes-title'>минути</span>"
@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
 						: "";
 			}
 			if (secondsElement) {
-				secondsElement.innerHTML = `<span class="seconds-number">${seconds}</span><span id="seconds-title">${getPluralForm(
+				secondsElement.innerHTML = `<span class="seconds-number">${seconds}</span><span class="seconds-title">${getPluralForm(
 					seconds,
 					" <span class='seconds-title'>секунда</span>",
 					" <span class='seconds-title'>секунди</span>"
