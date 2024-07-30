@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.10.6
+Version: 1.10.7
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -192,7 +192,7 @@ function handle_shortcode($atts, $shortcode)
 	$table_name = $wpdb->prefix . 'doors_promotions';
 	$current_date = date('Y-m-d');
 
-	$product_categories = $product ? $product->get_category_ids() : [];
+	$product_categories = (is_object($product) && method_exists($product, 'get_category_ids')) ? $product->get_category_ids() : [];
 
 	$query = "SELECT * FROM $table_name WHERE shortcode = %s AND start_date <= %s AND end_date >= %s AND active = %d";
 	$params = [$shortcode, $current_date, $current_date, 1];
