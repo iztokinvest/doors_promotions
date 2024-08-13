@@ -7,6 +7,10 @@ document.addEventListener("DOMContentLoaded", function () {
 		const minutesElement = document.getElementById("timer-minutes");
 		const secondsElement = document.getElementById("timer-seconds");
 
+		if (!daysElement || !hoursElement || !minutesElement || !secondsElement) {
+			return;
+		}
+
 		const endDateStr =
 			daysElement.getAttribute("data-end-date") ||
 			hoursElement.getAttribute("data-end-date") ||
@@ -14,7 +18,6 @@ document.addEventListener("DOMContentLoaded", function () {
 			secondsElement.getAttribute("data-end-date");
 
 		if (!endDateStr) {
-			console.log("End date not found");
 			return;
 		}
 
