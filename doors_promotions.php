@@ -175,11 +175,11 @@ function load_shortcode_template($content, $placeholders)
 	return $content;
 }
 
-function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds)
+function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workday_info)
 {
 	$shortcodes = [];
 	foreach (fetch_shortcodes_from_db() as $key => $data) {
-		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds]);
+		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'workday-info' => $workday_info]);
 	}
 
 	return $shortcodes;
@@ -206,7 +206,14 @@ function handle_shortcode($atts, $shortcode)
 			$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promo->end_date . '"></span>';
 			$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promo->end_date . '"></span>';
 
-			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds)[$shortcode];
+			$workday_info = 'fdas';
+			// foreach ($atts as $day => $time) {
+			// 	if ($time) {
+			// 		$workday_info .= "<p>$day: $time</p>";
+			// 	}
+			// }
+
+			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workday_info)[$shortcode];
 		}
 	}
 
@@ -263,7 +270,6 @@ function clear_cache()
 
 function initialize_shortcodes()
 {
-	// var_dump(33334); die();
 	clear_cache_if_needed();
 	$shortcodes = fetch_shortcodes_from_db();
 	foreach ($shortcodes as $shortcode => $data) {
@@ -573,14 +579,54 @@ function promotions_templates_page()
 				<?php endforeach; ?>
 			</tbody>
 		</table>
-		<ul>
-			<li><b>[image]</b> Адрес на банер</li>
-			<li><b>[alt]</b> Описание на банер</li>
-			<li><b>[timer-days]</b> Оставащи дни от промоцията</li>
-			<li><b>[timer-hours]</b> Оставащи часове от промоцията</li>
-			<li><b>[timer-minutes]</b> Оставащи минути от промоцията</li>
-			<li><b>[timer-seconds]</b> Оставащи секунди от промоцията</li>
-		</ul>
+		<div class="accordion accordion-flush" id="accordionFlushExample">
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="flush-headingOne">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+						Банери
+					</button>
+				</h2>
+				<div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+					<div class="accordion-body">
+						<ul>
+							<li><b>[image]</b> Адрес на банер</li>
+							<li><b>[alt]</b> Описание на банер</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="flush-headingTwo">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+						Таймер
+					</button>
+				</h2>
+				<div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+					<div class="accordion-body">
+						<ul>
+							<li><b>[timer-days]</b> Оставащи дни от промоцията</li>
+							<li><b>[timer-hours]</b> Оставащи часове от промоцията</li>
+							<li><b>[timer-minutes]</b> Оставащи минути от промоцията</li>
+							<li><b>[timer-seconds]</b> Оставащи секунди от промоцията</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="flush-headingThree">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+						Работно време
+					</button>
+				</h2>
+				<div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+					<div class="accordion-body">
+						<ul>
+							<li><b>[workdays]</b> работно време</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 <?php
 }
