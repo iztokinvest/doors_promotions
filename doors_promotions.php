@@ -175,11 +175,11 @@ function load_shortcode_template($content, $placeholders)
 	return $content;
 }
 
-function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workday_info)
+function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workdays)
 {
 	$shortcodes = [];
 	foreach (fetch_shortcodes_from_db() as $key => $data) {
-		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'workday-info' => $workday_info]);
+		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'workdays' => $workdays]);
 	}
 
 	return $shortcodes;
@@ -206,14 +206,9 @@ function handle_shortcode($atts, $shortcode)
 			$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promo->end_date . '"></span>';
 			$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promo->end_date . '"></span>';
 
-			$workday_info = 'fdas';
-			// foreach ($atts as $day => $time) {
-			// 	if ($time) {
-			// 		$workday_info .= "<p>$day: $time</p>";
-			// 	}
-			// }
+			$workdays="fdsa";
 
-			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workday_info)[$shortcode];
+			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workdays)[$shortcode];
 		}
 	}
 
