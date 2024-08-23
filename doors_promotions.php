@@ -144,6 +144,7 @@ function enqueue_countdown_timer_script()
 {
 	if (!is_admin()) {
 		wp_enqueue_script('countdown-timer', plugins_url('/assets/js/countdown_timer.js', __FILE__), array(), false, true);
+		wp_enqueue_script('workdays', plugins_url('/assets/js/workdays.js', __FILE__), array(), false, true);
 	}
 }
 add_action('wp_enqueue_scripts', 'enqueue_countdown_timer_script');
@@ -168,6 +169,14 @@ function fetch_shortcodes_from_db()
 
 function load_shortcode_template($content, $placeholders)
 {
+	$workday = additional_shortcodes('workday', $content);
+	$workdays_text = additional_shortcodes('holidays_text', $content);
+	$holiday = additional_shortcodes('holidays', $content);
+
+	if ($workday || $workdays_text || $holiday) {
+		return "<div class='workdays'>" . $workday . $workdays_text . $holiday . "</div>";
+	}
+
 	foreach ($placeholders as $key => $value) {
 		$content = str_replace("[$key]", $value, $content);
 	}
@@ -179,7 +188,7 @@ function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $ti
 {
 	$shortcodes = [];
 	foreach (fetch_shortcodes_from_db() as $key => $data) {
-		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'workdays' => $workdays]);
+		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'workday' => $workdays]);
 	}
 
 	return $shortcodes;
@@ -206,13 +215,71 @@ function handle_shortcode($atts, $shortcode)
 			$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promo->end_date . '"></span>';
 			$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promo->end_date . '"></span>';
 
-			$workdays="fdsa";
+			$workdays = "fdsa";
 
 			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workdays)[$shortcode];
 		}
 	}
 
 	return '';
+}
+
+function additional_shortcodes($keyword, $content)
+{
+	if ($keyword == 'workday') {
+		preg_match_all('/\[workday (.*?)\]/', $content, $workdays_matches);
+		if ($workdays_matches) {
+			$workdays = [];
+			foreach ($workdays_matches[1] as $text) {
+				$parts = explode(' ', $text);
+				$day = $parts[0];
+				$hours = $parts[1];
+
+				$workdays[] = ['day' => $day, 'hours' => $hours];
+			}
+
+			$content = "<table class='table-plain branch-hours'><tbody>";
+
+			$day_classes = [
+				'Понеделник' => 'Monday',
+				'Вторник' => 'Tuesday',
+				'Сряда' => 'Wednesday',
+				'Четвъртък' => 'Thursday',
+				'Петък' => 'Friday',
+				'Сабота' => 'Saturday',
+				'Неделя' => 'Sunday'
+			];
+
+			foreach ($workdays as $day) {
+				$content .= "<tr class='" . $day_classes[$day['day']] . "'>
+					<td>" . htmlspecialchars($day['day']) . "</td>
+					<td>" . htmlspecialchars($day['hours']) . "</td>
+				  </tr>";
+			}
+
+			$content .= "</tbody></table>";
+		}
+	}
+
+	if ($keyword == 'holidays_text') {
+		preg_match('/\[holidays_text\|(.*?)\]/', $content, $text_matches);
+
+		if ($text_matches) {
+			$content = "";
+			$content .= "<p class='holidays-text'>" . htmlspecialchars($text_matches[1]) . "</p>";
+		}
+	}
+
+	if ($keyword == 'holidays') {
+		preg_match('/\[holidays\|(.*?)\]/', $content, $holiday_matches);
+
+		if ($holiday_matches) {
+			$content = "";
+			$content .= "<p class='holidays'>" . htmlspecialchars($holiday_matches[1]) . "</p>";
+		}
+	}
+
+	return $content;
 }
 
 function clear_cache_if_needed()
