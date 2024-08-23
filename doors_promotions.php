@@ -251,7 +251,7 @@ function additional_shortcodes($keyword, $content)
 			];
 
 			foreach ($workdays as $day) {
-				$content .= "<tr class='" . $day_classes[$day['day']] . "'>
+				$content .= "<tr class='" . $day_classes[$day['day']] . "' data-day='" . $day_classes[$day['day']] . "'>
 					<td>" . htmlspecialchars($day['day']) . "</td>
 					<td>" . htmlspecialchars($day['hours']) . "</td>
 				  </tr>";
@@ -272,10 +272,21 @@ function additional_shortcodes($keyword, $content)
 
 	if ($keyword == 'holidays') {
 		preg_match('/\[holidays\|(.*?)\]/', $content, $holiday_matches);
+		$holiday_dates = $holiday_matches[1];
+
+		$dates_array = explode(', ', $holiday_dates);
+
+		foreach ($dates_array as $date) {
+			if (date('Y-m-d') > date('Y-m-d', strtotime($date))){
+				$show_dates = str_replace(' ' . $date, '', $holiday_dates);
+			} else {
+				$show_dates = $holiday_dates;
+			}
+		}
 
 		if ($holiday_matches) {
 			$content = "";
-			$content .= "<p class='holidays'>" . htmlspecialchars($holiday_matches[1]) . "</p>";
+			$content .= "<p class='holidays'>" . htmlspecialchars($show_dates) . "</p>";
 		}
 	}
 

@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-	console.log("DOM fully loaded and parsed on client side");
 
 	function countdownTimer() {
 		const daysElement = document.getElementById("timer-days");
