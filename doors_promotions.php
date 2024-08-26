@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.10.8
+Version: 1.11.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -170,11 +170,15 @@ function fetch_shortcodes_from_db()
 function load_shortcode_template($content, $placeholders)
 {
 	$workday = additional_shortcodes('workday', $content);
-	$workdays_text = additional_shortcodes('holidays_text', $content);
-	$holiday = additional_shortcodes('holidays', $content);
+	$holidays_text = additional_shortcodes('holidays_text', $content);
+	$holidays = additional_shortcodes('holidays', $content);
 
-	if ($workday || $workdays_text || $holiday) {
-		return "<div class='workdays'>" . $workday . $workdays_text . $holiday . "</div>";
+	if (empty($holidays)) {
+		$holidays_text = "";
+	}
+
+	if ($workday || $holidays_text || $holidays) {
+		return "<div class='workdays'>" . $workday . $holidays_text . $holidays . "</div>";
 	}
 
 	foreach ($placeholders as $key => $value) {
@@ -184,11 +188,11 @@ function load_shortcode_template($content, $placeholders)
 	return $content;
 }
 
-function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workdays)
+function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds)
 {
 	$shortcodes = [];
 	foreach (fetch_shortcodes_from_db() as $key => $data) {
-		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'workday' => $workdays]);
+		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds]);
 	}
 
 	return $shortcodes;
@@ -215,9 +219,7 @@ function handle_shortcode($atts, $shortcode)
 			$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promo->end_date . '"></span>';
 			$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promo->end_date . '"></span>';
 
-			$workdays = "fdsa";
-
-			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds, $workdays)[$shortcode];
+			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds)[$shortcode];
 		}
 	}
 
@@ -258,6 +260,8 @@ function additional_shortcodes($keyword, $content)
 			}
 
 			$content .= "</tbody></table>";
+		} else {
+			$content = "";
 		}
 	}
 
@@ -266,27 +270,35 @@ function additional_shortcodes($keyword, $content)
 
 		if ($text_matches) {
 			$content = "";
-			$content .= "<p class='holidays-text'>" . htmlspecialchars($text_matches[1]) . "</p>";
+			$content .=	"<p class='holidays-text'>" . htmlspecialchars($text_matches[1]) . "</p>";
+		} else {
+			$content = "";
 		}
 	}
 
 	if ($keyword == 'holidays') {
 		preg_match('/\[holidays\|(.*?)\]/', $content, $holiday_matches);
-		$holiday_dates = $holiday_matches[1];
-
-		$dates_array = explode(', ', $holiday_dates);
-
-		foreach ($dates_array as $date) {
-			if (date('Y-m-d') > date('Y-m-d', strtotime($date))){
-				$show_dates = str_replace(' ' . $date, '', $holiday_dates);
-			} else {
-				$show_dates = $holiday_dates;
-			}
-		}
-
 		if ($holiday_matches) {
+			$holiday_dates = $holiday_matches[1];
+
+			$dates_array = explode(', ', $holiday_dates);
+
+			foreach ($dates_array as $key => $date) {
+				$date_ymd = date('Y-m-d', strtotime($date));
+
+				if (date('Y-m-d') > $date_ymd) {
+					unset($dates_array[$key]);
+				}
+			}
+
+			if ($holiday_matches && count($dates_array) > 0) {
+				$content = "";
+				$content .= "<p class='holidays'>" . htmlspecialchars(implode(', ', $dates_array)) . "</p>";
+			} else {
+				$content = "";
+			}
+		} else {
 			$content = "";
-			$content .= "<p class='holidays'>" . htmlspecialchars($show_dates) . "</p>";
 		}
 	}
 
@@ -694,7 +706,9 @@ function promotions_templates_page()
 				<div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
 					<div class="accordion-body">
 						<ul>
-							<li><b>[workdays]</b> работно време</li>
+							<li><b>[workday Понеделник 09:00-18:00]</b> Работно време</li>
+							<li><b>[holidays_text|Шоурумът няма да работи на:]</b> Текст за почивни дни</li>
+							<li><b>[holidays|01.01.2025, 02.01.2025]</b> Добавяне на почивни дни</li>
 						</ul>
 					</div>
 				</div>
