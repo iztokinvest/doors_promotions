@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.11.0
+Version: 1.11.1
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -169,16 +169,18 @@ function fetch_shortcodes_from_db()
 
 function load_shortcode_template($content, $placeholders)
 {
-	$workday = additional_shortcodes('workday', $content);
-	$holidays_text = additional_shortcodes('holidays_text', $content);
-	$holidays = additional_shortcodes('holidays', $content);
+	if ($placeholders['worktime']) {
+		$workday = additional_shortcodes('workday', $content);
+		$holidays_text = additional_shortcodes('holidays_text', $content);
+		$holidays = additional_shortcodes('holidays', $content);
 
-	if (empty($holidays)) {
-		$holidays_text = "";
-	}
+		if (empty($holidays)) {
+			$holidays_text = "";
+		}
 
-	if ($workday || $holidays_text || $holidays) {
-		return "<div class='workdays'>" . $workday . $holidays_text . $holidays . "</div>";
+		if ($workday || $holidays_text || $holidays) {
+			return "<div class='workdays'>" . $workday . $holidays_text . $holidays . "</div>";
+		}
 	}
 
 	foreach ($placeholders as $key => $value) {
@@ -191,8 +193,12 @@ function load_shortcode_template($content, $placeholders)
 function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds)
 {
 	$shortcodes = [];
+	$worktime = false;
 	foreach (fetch_shortcodes_from_db() as $key => $data) {
-		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds]);
+		if (preg_match('/workday/', $data['content'])) {
+			$worktime = true;
+		}
+		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'worktime' => $worktime]);
 	}
 
 	return $shortcodes;
@@ -256,6 +262,7 @@ function additional_shortcodes($keyword, $content)
 				$content .= "<tr class='" . $day_classes[$day['day']] . "' data-day='" . $day_classes[$day['day']] . "'>
 					<td>" . htmlspecialchars($day['day']) . "</td>
 					<td>" . htmlspecialchars($day['hours']) . "</td>
+					<td data-open-day='" . $day_classes[$day['day']] . "'></td>
 				  </tr>";
 			}
 
