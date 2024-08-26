@@ -21,14 +21,16 @@ function isOpen(day, time) {
 	if (!hours.start || !hours.end) return false;
 	return time >= hours.start && time <= hours.end;
 }
-console.log(isOpen(currentDay, currentTime));
+
 if (isOpen(currentDay, currentTime)) {
 	const openDayTD = document.querySelector(`[data-open-day="${currentDay}"]`);
+	const parentTr = openDayTD.closest("tr");
 	if (isHoliday()) {
-		openDayTD.innerHTML = '<span class="holiday-text">Почивен ден</span>';
+		parentTr.classList.add("holiday-now");
+		openDayTD.innerHTML = 'Почивен ден';
 	} else {
-		openDayTD.classList.add("open-now");
-		openDayTD.innerHTML = '<span class="open-text">Отворено</span>';
+		parentTr.classList.add("open-now");
+		openDayTD.innerHTML = 'Отворено';
 	}
 }
 function isHoliday() {
