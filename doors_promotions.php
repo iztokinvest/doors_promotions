@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.0
+Version: 1.13.1
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -510,23 +510,13 @@ function promotions_list_page()
 		'expired' => 0
 	];
 	$table_name = $wpdb->prefix . 'doors_promotions';
-	if (isset($_GET['filter']) && $_GET['filter'] == 'worktime') {
-		$results = $wpdb->get_results("SELECT * FROM $table_name WHERE shortcode LIKE '%worktime%' ORDER BY end_date DESC");
-	} else {
-		$results = $wpdb->get_results("SELECT * FROM $table_name WHERE shortcode NOT LIKE '%worktime%' ORDER BY end_date DESC");
-	}
 
+	$results = $wpdb->get_results("SELECT * FROM $table_name WHERE " . filter_where_clause() . " ORDER BY end_date DESC");
 
 ?>
 	<div class="wrap">
 		<h1>Списък с промоции
-			<form method="GET" class="w-auto float-end" onChange="this.submit()">
-				<input type="hidden" name="page" value="promotions">
-				<select name="filter">
-					<option value="">Промоции</a>
-					<option value="worktime" <?php echo isset($_GET['filter']) && $_GET['filter'] == 'worktime' ? 'selected' : ''; ?>>Работни времена</a>
-				</select>
-			</form>
+			<?php echo filter('promotions'); ?>
 		</h1>
 
 		<table id="promotions-list-table" class="table table-striped">
@@ -633,11 +623,12 @@ function promotions_templates_page()
 {
 	global $wpdb;
 	$table_name = $wpdb->prefix . 'doors_promotions_templates';
-	$results = $wpdb->get_results("SELECT * FROM $table_name");
+
+	$results = $wpdb->get_results("SELECT * FROM $table_name WHERE " . filter_where_clause() . "");
 
 ?>
 	<div class="wrap">
-		<h1>Списък с шаблони</h1>
+		<h1>Списък с шаблони <?php echo filter('promotions_templates'); ?></h1>
 		<!-- Existing Templates Table -->
 		<table class="table table-striped">
 			<thead>
@@ -652,10 +643,10 @@ function promotions_templates_page()
 			<tbody>
 				<tr class="bg-secondary">
 					<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-						<td colspan="2" class="w-25"><input type="text" class="form-control" id="shortcode" name="shortcode" required>
-							<p class="text-warning">Добавяне на нов шаблон. За продукт с категории трябва да присъства думата: "product", а за работно време: "workdays".</p>
+						<td colspan="2" class="w-25 align-text-top"><input type="text" class="form-control" id="shortcode" name="shortcode" required>
+							<p class="text-warning">Трябва да присъстват думите:<br><b>product</b> - за продукт<br><b>worktime</b> - за работно време<br><b>text</b> - за текст</p>
 						</td>
-						<td class="w-25"><input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required></td>
+						<td class="w-25 align-text-top"><input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required></td>
 						<td style="text-align:left"><textarea class="form-control template_content" name="template_content"></textarea></td>
 						<td colspan="2">
 							<input type="hidden" name="action" value="add_new_template">
@@ -842,10 +833,12 @@ function handle_edit_promo()
 
 		if (preg_match('/worktime/', $promo_shortcode)) {
 			wp_redirect(admin_url('admin.php?page=promotions&filter=worktime#msg=Успешно редактиране.'));
+		} else if (preg_match('/text/', $promo_shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions&filter=text#msg=Успешно редактиране.'));
 		} else {
 			wp_redirect(admin_url('admin.php?page=promotions#msg=Успешно редактиране.'));
 		}
-		
+
 		exit;
 	} else {
 		var_dump($_POST);
@@ -1002,7 +995,14 @@ function handle_update_template()
 
 		clear_cache();
 
-		wp_redirect(admin_url('admin.php?page=promotions_templates#msg=Шаблонът е редактиран'));
+		if (preg_match('/worktime/', $shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions_templates&filter=worktime#msg=Шаблонът е редактиран.'));
+		} else if (preg_match('/text/', $shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions_templates&filter=text#msg=Шаблонът е редактиран.'));
+		} else {
+			wp_redirect(admin_url('admin.php?page=promotions_templates#msg=Шаблонът е редактиран.'));
+		}
+
 		exit;
 	} else {
 		var_dump($_POST);
@@ -1024,6 +1024,25 @@ function handle_delete_template()
 		wp_redirect(admin_url('admin.php?page=promotions_templates#msg=Шаблонът е изтрит'));
 		exit;
 	}
+}
+
+function filter($redirect_to_page)
+{
+	return "<form method='GET' class='w-auto float-end' onChange='this.submit()'>
+				<input type='hidden' name='page' value='{$redirect_to_page}'>
+				<select name='filter'>
+					<option value=''>Промоции</a>
+					<option value='worktime' " . (isset($_GET['filter']) && $_GET['filter'] == 'worktime' ? 'selected' : '') . ">Работни времена</a>
+					<option value='text' " . (isset($_GET['filter']) && $_GET['filter'] == 'text' ? 'selected' : '') . ">Текстове</a>
+				</select>
+			</form>";
+}
+function filter_where_clause(){
+	$filter = isset($_GET['filter']) && in_array($_GET['filter'], ['worktime', 'text']) ? $_GET['filter'] : '';
+
+	$where_clause = $filter ? "shortcode LIKE '%{$filter}%'" : "shortcode NOT LIKE '%worktime%' AND shortcode NOT LIKE '%text%'";
+
+	return $where_clause;
 }
 
 function promotions_menu()
