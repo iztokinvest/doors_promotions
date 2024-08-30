@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.12.0
+Version: 1.13.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -510,11 +510,25 @@ function promotions_list_page()
 		'expired' => 0
 	];
 	$table_name = $wpdb->prefix . 'doors_promotions';
-	$results = $wpdb->get_results("SELECT * FROM $table_name ORDER BY end_date DESC");
+	if (isset($_GET['filter']) && $_GET['filter'] == 'worktime') {
+		$results = $wpdb->get_results("SELECT * FROM $table_name WHERE shortcode LIKE '%worktime%' ORDER BY end_date DESC");
+	} else {
+		$results = $wpdb->get_results("SELECT * FROM $table_name WHERE shortcode NOT LIKE '%worktime%' ORDER BY end_date DESC");
+	}
+
 
 ?>
 	<div class="wrap">
-		<h1>Списък с промоции</h1>
+		<h1>Списък с промоции
+			<form method="GET" class="w-auto float-end" onChange="this.submit()">
+				<input type="hidden" name="page" value="promotions">
+				<select name="filter">
+					<option value="">Промоции</a>
+					<option value="worktime" <?php echo isset($_GET['filter']) && $_GET['filter'] == 'worktime' ? 'selected' : ''; ?>>Работни времена</a>
+				</select>
+			</form>
+		</h1>
+
 		<table id="promotions-list-table" class="table table-striped">
 			<thead>
 				<tr>
@@ -639,7 +653,7 @@ function promotions_templates_page()
 				<tr class="bg-secondary">
 					<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 						<td colspan="2" class="w-25"><input type="text" class="form-control" id="shortcode" name="shortcode" required>
-							<p class="text-warning">Добавяне на нов шаблон. За продукт с категории трябва да присъства думата "product".</p>
+							<p class="text-warning">Добавяне на нов шаблон. За продукт с категории трябва да присъства думата: "product", а за работно време: "workdays".</p>
 						</td>
 						<td class="w-25"><input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required></td>
 						<td style="text-align:left"><textarea class="form-control template_content" name="template_content"></textarea></td>
@@ -715,7 +729,8 @@ function promotions_templates_page()
 				<div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
 					<div class="accordion-body">
 						<ul>
-							<li><b>[workday Понеделник 09:00-18:00]</b> Работно време</li>
+							<li><b>[workday Понеделник 09:00-18:00]</b> Работно време - вариант с всеки ден поотделно</li>
+							<li><b>[workday Понеделник-Събота 09:00-18:00]</b> Работно време - кратък вариант с диапазон от дни</li>
 							<li><b>[holidays_text|Шоурумът няма да работи на:]</b> Текст за почивни дни</li>
 							<li><b>[holidays|01.01.2025, 02.01.2025]</b> Добавяне на почивни дни</li>
 						</ul>
@@ -825,7 +840,12 @@ function handle_edit_promo()
 
 		clear_cache();
 
-		wp_redirect(admin_url('admin.php?page=promotions#msg=Успешно редактиране.'));
+		if (preg_match('/worktime/', $promo_shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions&filter=worktime#msg=Успешно редактиране.'));
+		} else {
+			wp_redirect(admin_url('admin.php?page=promotions#msg=Успешно редактиране.'));
+		}
+		
 		exit;
 	} else {
 		var_dump($_POST);
