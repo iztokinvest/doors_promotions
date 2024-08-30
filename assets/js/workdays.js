@@ -19,7 +19,16 @@ if (workHoursSections) {
 		});
 
 		const today = new Date();
-		const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+		const dayNames = [
+			"Sunday",
+			"Monday",
+			"Tuesday",
+			"Wednesday",
+			"Thursday",
+			"Friday",
+			"Saturday",
+			"Monday-Friday",
+		];
 		const currentDay = dayNames[today.getDay()];
 		const currentTime = today.toTimeString().slice(0, 5);
 
@@ -29,16 +38,66 @@ if (workHoursSections) {
 			return time >= hours.start && time <= hours.end;
 		}
 
-		if (isOpen(currentDay, currentTime)) {
-			const openDayTD = section.querySelector(`[data-open-day="${currentDay}"]`);
-			const parentTr = openDayTD.closest("tr");
+		function timeDifferenceInMinutes(time1, time2) {
+			const [hours1, minutes1] = time1.split(":").map(Number);
+			const [hours2, minutes2] = time2.split(":").map(Number);
+			return (hours1 - hours2) * 60 + (minutes1 - minutes2);
+		}
 
-			if (isHoliday(section)) {
-				parentTr.classList.add("holiday-now");
-				openDayTD.innerHTML = "Почивен ден";
+		function getStatusMessage(day, time) {
+			const hours = workHours[day];
+			if (!hours.start || !hours.end) return "Затворено";
+
+			const minutesToOpen = timeDifferenceInMinutes(hours.start, time);
+			const minutesToClose = timeDifferenceInMinutes(hours.end, time);
+
+			if (minutesToOpen > 0 && minutesToOpen < 60) {
+				return "Отваря скоро";
+			} else if (minutesToClose > 0 && minutesToClose < 60) {
+				return "Затваря скоро";
+			} else if (isOpen(day, time)) {
+				return "Отворено";
+			}
+
+			return "Затворено";
+		}
+
+		function isWithinDayRange(currentDay, range) {
+			const days = {
+				Monday: 1,
+				Tuesday: 2,
+				Wednesday: 3,
+				Thursday: 4,
+				Friday: 5,
+				Saturday: 6,
+				Sunday: 0,
+			};
+			const [startDay, endDay] = range.split("-");
+			const currentDayIndex = days[currentDay];
+			const startDayIndex = days[startDay];
+			const endDayIndex = days[endDay];
+
+			// Handle wrap-around for ranges like Monday-Friday
+			if (startDayIndex <= endDayIndex) {
+				return currentDayIndex >= startDayIndex && currentDayIndex <= endDayIndex;
 			} else {
-				parentTr.classList.add("open-now");
-				openDayTD.innerHTML = "Отворено";
+				return currentDayIndex >= startDayIndex || currentDayIndex <= endDayIndex;
+			}
+		}
+
+		for (const day in workHours) {
+			if (day === currentDay || (day.includes("-") && isWithinDayRange(currentDay, day))) {
+				const statusMessage = getStatusMessage(day, currentTime);
+				const openDayTD = section.querySelector(`[data-open-day="${day}"]`);
+				const parentTr = openDayTD.closest("tr");
+
+				if (statusMessage === "Отворено" && isHoliday(section)) {
+					parentTr.classList.add("holiday-now");
+					openDayTD.innerHTML = "Почивен ден";
+				} else {
+					parentTr.classList.add(statusMessage === "Отворено" ? "open-now" : "closed-now");
+					openDayTD.innerHTML = statusMessage;
+				}
 			}
 		}
 	});
