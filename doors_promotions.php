@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.1
+Version: 1.13.2
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -254,7 +254,7 @@ function additional_shortcodes($keyword, $content)
 				'Сряда' => 'Wednesday',
 				'Четвъртък' => 'Thursday',
 				'Петък' => 'Friday',
-				'Сабота' => 'Saturday',
+				'Събота' => 'Saturday',
 				'Неделя' => 'Sunday',
 				'Понеделник-Петък' => 'Monday-Friday',
 				'Понеделник-Събота' => 'Monday-Saturday',
