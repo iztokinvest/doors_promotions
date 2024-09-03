@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.4
+Version: 1.13.5
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -945,6 +945,19 @@ function handle_activate_all()
 	}
 }
 
+function extend_allowed_tags($tags)
+{
+	$tags['marquee'] = array(
+		'behavior' => true,
+		'bgcolor' => true,
+		'direction' => true,
+		'loop' => true,
+	);
+	return $tags;
+}
+
+add_filter('wp_kses_allowed_html', 'extend_allowed_tags');
+
 function handle_add_new_template()
 {
 	if (isset($_POST['action']) && $_POST['action'] == 'add_new_template') {
@@ -952,7 +965,7 @@ function handle_add_new_template()
 		$table_name = $wpdb->prefix . 'doors_promotions_templates';
 		$shortcode = sanitize_text_field($_POST['shortcode']);
 		$shortcode_name = sanitize_text_field($_POST['shortcode_name']);
-		$template_content = $_POST['template_content'];
+		$template_content = wp_kses_post($_POST['template_content'], 'extend_allowed_tags');
 
 		$wpdb->insert(
 			$table_name,
@@ -981,7 +994,7 @@ function handle_update_template()
 		$promo_id = intval($_POST['promo_id']);
 		$shortcode = sanitize_text_field($_POST['shortcode']);
 		$shortcode_name = sanitize_text_field($_POST['shortcode_name']);
-		$template_content = $_POST['template_content'];
+		$template_content = wp_kses_post($_POST['template_content'], 'extend_allowed_tags');
 
 		// Correct the array structure
 		$wpdb->update(
