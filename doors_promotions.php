@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.3
+Version: 1.13.4
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -952,7 +952,7 @@ function handle_add_new_template()
 		$table_name = $wpdb->prefix . 'doors_promotions_templates';
 		$shortcode = sanitize_text_field($_POST['shortcode']);
 		$shortcode_name = sanitize_text_field($_POST['shortcode_name']);
-		$template_content = wp_kses_post($_POST['template_content']);
+		$template_content = $_POST['template_content'];
 
 		$wpdb->insert(
 			$table_name,
@@ -981,7 +981,7 @@ function handle_update_template()
 		$promo_id = intval($_POST['promo_id']);
 		$shortcode = sanitize_text_field($_POST['shortcode']);
 		$shortcode_name = sanitize_text_field($_POST['shortcode_name']);
-		$template_content = wp_kses_post($_POST['template_content']);
+		$template_content = $_POST['template_content'];
 
 		// Correct the array structure
 		$wpdb->update(
