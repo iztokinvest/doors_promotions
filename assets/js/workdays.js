@@ -46,20 +46,20 @@ if (workHoursSections) {
 
 		function getStatusMessage(day, time) {
 			const hours = workHours[day];
-			if (!hours.start || !hours.end) return "Затворено";
+			if (!hours.start || !hours.end) return "";
 
 			const minutesToOpen = timeDifferenceInMinutes(hours.start, time);
 			const minutesToClose = timeDifferenceInMinutes(hours.end, time);
 
 			if (minutesToOpen > 0 && minutesToOpen < 60) {
-				return "Отваря скоро";
+				return "отваря скоро";
 			} else if (minutesToClose > 0 && minutesToClose < 60) {
-				return "Затваря скоро";
+				return "затваря скоро";
 			} else if (isOpen(day, time)) {
-				return "Отворено";
+				return "отворено";
 			}
 
-			return "Затворено";
+			return "";
 		}
 
 		function isWithinDayRange(currentDay, range) {
@@ -91,11 +91,11 @@ if (workHoursSections) {
 				const openDayTD = section.querySelector(`[data-open-day="${day}"]`);
 				const parentTr = openDayTD.closest("tr");
 
-				if (statusMessage === "Отворено" && isHoliday(section)) {
+				if (isHoliday(section)) {
 					parentTr.classList.add("holiday-now");
-					openDayTD.innerHTML = "Почивен ден";
+					openDayTD.innerHTML = "почивен ден";
 				} else {
-					parentTr.classList.add(statusMessage === "Отворено" ? "open-now" : "closed-now");
+					parentTr.classList.add(statusMessage === "отворено" ? "open-now" : "closed-now");
 					openDayTD.innerHTML = statusMessage;
 				}
 			}
