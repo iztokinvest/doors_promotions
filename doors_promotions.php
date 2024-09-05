@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.6
+Version: 1.13.7
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -645,7 +645,7 @@ function promotions_templates_page()
 				<tr class="bg-secondary">
 					<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 						<td colspan="2" class="w-25 align-text-top"><input type="text" class="form-control" id="shortcode" name="shortcode" required>
-							<p class="text-warning">Трябва да присъстват думите:<br><b>product</b> - за продукт<br><b>worktime</b> - за работно време<br><b>text</b> - за текст</p>
+							<p class="text-warning">Трябва да присъстват думите:<br><b>product</b> - за продукт<br><b>worktime</b> - за работно време<br><b>text</b> - за текст<br><b>css</b> - за css</p>
 						</td>
 						<td class="w-25 align-text-top"><input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required></td>
 						<td style="text-align:left"><textarea class="form-control template_content" name="template_content"></textarea></td>
@@ -725,6 +725,20 @@ function promotions_templates_page()
 							<li><b>[workday Понеделник-Събота 09:00-18:00]</b> Работно време - кратък вариант с диапазон от дни</li>
 							<li><b>[holidays_text|Шоурумът няма да работи на:]</b> Текст за почивни дни</li>
 							<li><b>[holidays|01.01.2025, 02.01.2025]</b> Добавяне на почивни дни</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="flush-headingFour">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFour" aria-expanded="false" aria-controls="flush-collapseFour">
+						CSS
+					</button>
+				</h2>
+				<div id="flush-collapseFour" class="accordion-collapse collapse" aria-labelledby="flush-headingFour" data-bs-parent="#accordionFlushExample">
+					<div class="accordion-body">
+						<ul>
+							<li><b>&lt;style&gt;&lt;/style&gt;</b> Добавяне на CSS код</li>
 						</ul>
 					</div>
 				</div>
@@ -953,6 +967,7 @@ function extend_allowed_tags($tags)
 		'direction' => true,
 		'loop' => true,
 	);
+	$tags['style'] = array();
 	return $tags;
 }
 
@@ -1048,13 +1063,15 @@ function filter($redirect_to_page)
 					<option value=''>Промоции</a>
 					<option value='worktime' " . (isset($_GET['filter']) && $_GET['filter'] == 'worktime' ? 'selected' : '') . ">Работни времена</a>
 					<option value='text' " . (isset($_GET['filter']) && $_GET['filter'] == 'text' ? 'selected' : '') . ">Текстове</a>
+					<option value='css' " . (isset($_GET['filter']) && $_GET['filter'] == 'css' ? 'selected' : '') . ">CSS</a>
 				</select>
 			</form>";
 }
-function filter_where_clause(){
-	$filter = isset($_GET['filter']) && in_array($_GET['filter'], ['worktime', 'text']) ? $_GET['filter'] : '';
+function filter_where_clause()
+{
+	$filter = isset($_GET['filter']) && in_array($_GET['filter'], ['worktime', 'text', 'css']) ? $_GET['filter'] : '';
 
-	$where_clause = $filter ? "shortcode LIKE '%{$filter}%'" : "shortcode NOT LIKE '%worktime%' AND shortcode NOT LIKE '%text%'";
+	$where_clause = $filter ? "shortcode LIKE '%{$filter}%'" : "shortcode NOT LIKE '%worktime%' AND shortcode NOT LIKE '%text%' AND shortcode NOT LIKE '%css%'";
 
 	return $where_clause;
 }
