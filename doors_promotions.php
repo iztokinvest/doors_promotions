@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.9
+Version: 1.13.10
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -536,12 +536,17 @@ function promotions_list_page()
 
 
 					switch (true) {
+						case $row->start_date > date('Y-m-d'):
+							$row_color = 'style="background: #00dd7761"';
+							$row_status = 'expired';
+							$rows_count['expired']++;
+							break;
 						case $row->end_date < date('Y-m-d'):
 							$row_color = 'style="background: #ff000040"';
 							$row_status = 'expired';
 							$rows_count['expired']++;
 							break;
-						case $row->end_date < date('Y-m-d', strtotime('+5 days')):
+						case $row->end_date < date('Y-m-d', strtotime('+6 days')):
 							$row_color = 'style="background: #ffff0040"';
 							$row_status = 'expiring';
 							$rows_count['expiring']++;
@@ -550,6 +555,7 @@ function promotions_list_page()
 							$row_color = '';
 							$row_status = 'active';
 							$rows_count['active']++;
+
 					}
 					?>
 					<tr <?php echo $row_color; ?>>
@@ -576,7 +582,7 @@ function promotions_list_page()
 							<td>
 								<input type="hidden" name="action" value="edit_promo">
 								<input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
-								<button type="submit" class="btn btn-primary">Запази</button>
+								<button type="submit" class="btn btn-primary">Редактирай</button>
 							</td>
 						</form>
 						<td>
@@ -656,7 +662,7 @@ function promotions_templates_page()
 							<td>
 								<input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
 								<input type="hidden" name="action" value="update_template">
-								<button type="submit" class="btn btn-primary template-button" style="display:none;">Запази</button>
+								<button type="submit" class="btn btn-primary template-button" style="display:none;">Редактирай</button>
 							</td>
 						</form>
 						<td>
