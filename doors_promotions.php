@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.8
+Version: 1.13.9
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -384,7 +384,7 @@ function promotions_settings_page()
 
 			<table class="table">
 				<tr>
-					<th scope="row">Качи изображение</th>
+					<th scope="row" style="width: 300px;">Качи изображение</th>
 					<td>
 						<div><input type="checkbox" id="remove-file-upload"> Без файл <span class="text-danger">(маркира се, ако промоцията няма да съдържа изображене)</span></div>
 						<input type="file" class="form-control-file" name="promo_image" id="promo_image" required>
