@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.10
+Version: 1.13.11
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -497,6 +497,7 @@ function promotions_list_page()
 {
 	global $wpdb;
 	$rows_count = [
+		'futured' => 0,
 		'active' => 0,
 		'expiring' => 0,
 		'expired' => 0
@@ -538,8 +539,8 @@ function promotions_list_page()
 					switch (true) {
 						case $row->start_date > date('Y-m-d'):
 							$row_color = 'style="background: #00dd7761"';
-							$row_status = 'expired';
-							$rows_count['expired']++;
+							$row_status = 'futured';
+							$rows_count['futured']++;
 							break;
 						case $row->end_date < date('Y-m-d'):
 							$row_color = 'style="background: #ff000040"';
