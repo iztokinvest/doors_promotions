@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			const trigger = event.currentTarget;
 
 			if (trigger.value.includes("product")) {
-				promoCategories.style.display = "flex";
+				promoCategories.style.display = "table-row";
 			} else {
 				promoCategories.style.display = "none";
 				const checkboxes = document.getElementsByName("promo_categories[]");

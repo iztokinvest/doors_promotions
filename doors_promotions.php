@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.7
+Version: 1.13.8
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -382,115 +382,106 @@ function promotions_settings_page()
 		<form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data" class="bootstrap-form">
 			<input type="hidden" name="action" value="submit_promo">
 
-			<div class="form-group row">
-				<label for="promo_image" class="col-sm-4 col-form-label">Качи изображение</label>
-				<div class="col-sm-8">
-					<div><input type="checkbox" id="remove-file-upload"> Без файл <span class="text-danger">(маркира се, ако промоцията няма да съдържа изображене)</span></div>
-					<input type="file" class="form-control-file" name="promo_image" id="promo_image" required>
-					<img id="promo_image_preview" src="" alt="Selected Image" style="max-width: 300px; max-height: 300px; display: none;">
-				</div>
-			</div>
-
-			<div class="form-group row">
-				<label for="promo_title" class="col-sm-4 col-form-label">Позиция (shortcode)</label>
-				<div class="col-sm-8">
-					<select class="form-control" name="promo_shortcode" id="promo_shortcode" placeholder="Позиция" required>
-						<option></option>
+			<table class="table">
+				<tr>
+					<th scope="row">Качи изображение</th>
+					<td>
+						<div><input type="checkbox" id="remove-file-upload"> Без файл <span class="text-danger">(маркира се, ако промоцията няма да съдържа изображене)</span></div>
+						<input type="file" class="form-control-file" name="promo_image" id="promo_image" required>
+						<img id="promo_image_preview" src="" alt="Selected Image" style="max-width: 300px; max-height: 300px; display: none;">
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">Позиция (shortcode)</th>
+					<td>
+						<select class="form-control" name="promo_shortcode" id="promo_shortcode" placeholder="Позиция" required>
+							<option></option>
+							<?php
+							$shortcodes = fetch_shortcodes_from_db();
+							foreach ($shortcodes as $shortcode => $data) {
+								$name = esc_html($data['name']);
+								echo "<option value='$shortcode' " . (isset($_GET['shortcode']) && $_GET['shortcode'] == $shortcode ? 'selected' : '') . ">$name</option>";
+							}
+							?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">Заглавие (alt)</th>
+					<td>
+						<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" <?php echo isset($_GET['title']) ? 'value="' . $_GET['title'] . '"' : ''; ?> required>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">Начална и крайна дата</th>
+					<td>
+						<input required type="text" class="form-control datepicker-input d-inline" name="promo_start_date" id="promo_start_date" />
+						<input required type="text" class="form-control datepicker-input d-inline" name="promo_end_date" id="promo_end_date" />
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">Активен</th>
+					<td>
+						<input type="checkbox" class="form-control" name="active_banner" id="active_banner" checked />
+					</td>
+				</tr>
+				<tr id="promo_categories" style="<?php echo isset($_GET['category']) && $_GET['category'] > 0 ? '' : 'display:none"'; ?>">
+					<th scope="row">Категории</th>
+					<td>
 						<?php
-						$shortcodes = fetch_shortcodes_from_db();
-						foreach ($shortcodes as $shortcode => $data) {
-							$name = esc_html($data['name']);
-							echo "<option value='$shortcode' " . (isset($_GET['shortcode']) && $_GET['shortcode'] == $shortcode ? 'selected' : '') . ">$name</option>";
-						}
-						?>
-					</select>
-				</div>
-			</div>
+						$product_categories = get_terms([
+							'taxonomy' => 'product_cat',
+							'hide_empty' => false,
+						]);
 
-			<div class="form-group row">
-				<label for="promo_title" class="col-sm-4 col-form-label">Заглавие (alt)</label>
-				<div class="col-sm-8">
-					<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" <?php echo isset($_GET['title']) ? 'value="' . $_GET['title'] . '"' : ''; ?> required>
-				</div>
-			</div>
+						// Initialize the hierarchy array
+						$categories_hierarchy = [];
 
-			<div class="form-group row">
-				<label for="promo_start_date" class="col-sm-4 col-form-label">Начална дата</label>
-				<div class="col-sm-8">
-					<input required type="text" class="form-control datepicker-input" name="promo_start_date" id="promo_start_date" />
-				</div>
-			</div>
-
-			<div class="form-group row">
-				<label for="promo_end_date" class="col-sm-4 col-form-label">Крайна дата</label>
-				<div class="col-sm-8">
-					<input required type="text" class="form-control datepicker-input" name="promo_end_date" id="promo_end_date" />
-				</div>
-			</div>
-
-			<div class="form-group row">
-				<label for="active_banner" class="col-sm-4 col-form-label">Активен</label>
-				<div class="col-sm-8">
-					<input type="checkbox" class="form-control" name="active_banner" id="active_banner" checked />
-				</div>
-			</div>
-
-			<div class="form-group row" id="promo_categories" style="<?php echo isset($_GET['category']) && $_GET['category'] > 0 ? '' : 'display:none"'; ?>">
-				<label class="col-sm-2 col-form-label">Избери категории</label>
-				<div class="col-sm-8">
-					<?php
-					$product_categories = get_terms([
-						'taxonomy' => 'product_cat',
-						'hide_empty' => false,
-					]);
-
-					// Initialize the hierarchy array
-					$categories_hierarchy = [];
-
-					// First pass: Set up all parent categories
-					foreach ($product_categories as $category) {
-						if ($category->parent == 0) {
-							// This is a base category
-							$categories_hierarchy[$category->term_id] = [
-								'category' => $category,
-								'children' => []
-							];
-						}
-					}
-
-					// Second pass: Attach subcategories to their parents
-					foreach ($product_categories as $category) {
-						if ($category->parent != 0) {
-							// This is a subcategory
-							if (isset($categories_hierarchy[$category->parent])) {
-								$categories_hierarchy[$category->parent]['children'][] = $category;
-							} else {
-								// Initialize the parent if not already set
-								$categories_hierarchy[$category->parent] = [
-									'category' => null,
-									'children' => [$category]
+						// First pass: Set up all parent categories
+						foreach ($product_categories as $category) {
+							if ($category->parent == 0) {
+								// This is a base category
+								$categories_hierarchy[$category->term_id] = [
+									'category' => $category,
+									'children' => []
 								];
 							}
 						}
-					}
 
-					// Display the categories
-					foreach ($categories_hierarchy as $category_info) {
-						if ($category_info['category']) {
-							// Display base category in bold
-							echo '<div class="form-group row"><strong><input type="checkbox" name="promo_categories[]" value="' . esc_attr($category_info['category']->term_id) . '" class="base-category" data-category-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($category_info['category']->term_id) . '" ' . (isset($_GET['category']) && $_GET['category'] == esc_attr($category_info['category']->term_id) ? 'checked' : '') . '>' . esc_html($category_info['category']->name) . '</strong></div>';
-						}
-
-						// Display subcategories
-						if (!empty($category_info['children'])) {
-							foreach ($category_info['children'] as $subcategory) {
-								echo '<div class="form-group row" style="padding-left: 20px;"><input type="checkbox" name="promo_categories[]" value="' . esc_attr($subcategory->term_id) . '" class="sub-category" data-parent-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($subcategory->term_id) . '" ' . (isset($_GET['category']) && $_GET['category'] == esc_attr($subcategory->term_id) ? 'checked' : '') . '>' . esc_html($subcategory->name) . '</div>';
+						// Second pass: Attach subcategories to their parents
+						foreach ($product_categories as $category) {
+							if ($category->parent != 0) {
+								// This is a subcategory
+								if (isset($categories_hierarchy[$category->parent])) {
+									$categories_hierarchy[$category->parent]['children'][] = $category;
+								} else {
+									// Initialize the parent if not already set
+									$categories_hierarchy[$category->parent] = [
+										'category' => null,
+										'children' => [$category]
+									];
+								}
 							}
 						}
-					}
-					?>
-				</div>
-			</div>
+
+						// Display the categories
+						foreach ($categories_hierarchy as $category_info) {
+							if ($category_info['category']) {
+								// Display base category in bold
+								echo '<div class="form-group row"><strong><input type="checkbox" name="promo_categories[]" value="' . esc_attr($category_info['category']->term_id) . '" class="base-category" data-category-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($category_info['category']->term_id) . '" ' . (isset($_GET['category']) && $_GET['category'] == esc_attr($category_info['category']->term_id) ? 'checked' : '') . '>' . esc_html($category_info['category']->name) . '</strong></div>';
+							}
+
+							// Display subcategories
+							if (!empty($category_info['children'])) {
+								foreach ($category_info['children'] as $subcategory) {
+									echo '<div class="form-group ms-3"><input type="checkbox" name="promo_categories[]" value="' . esc_attr($subcategory->term_id) . '" class="sub-category" data-parent-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($subcategory->term_id) . '" ' . (isset($_GET['category']) && $_GET['category'] == esc_attr($subcategory->term_id) ? 'checked' : '') . '>' . esc_html($subcategory->name) . '</div>';
+								}
+							}
+						}
+						?>
+					</td>
+				</tr>
+			</table>
 
 			<div class="form-group row">
 				<div class="col-sm-10 offset-sm-2">
@@ -585,7 +576,7 @@ function promotions_list_page()
 							<td>
 								<input type="hidden" name="action" value="edit_promo">
 								<input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
-								<button type="submit" class="btn btn-primary">Редактирай</button>
+								<button type="submit" class="btn btn-primary">Запази</button>
 							</td>
 						</form>
 						<td>
@@ -665,7 +656,7 @@ function promotions_templates_page()
 							<td>
 								<input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
 								<input type="hidden" name="action" value="update_template">
-								<button type="submit" class="btn btn-primary template-button" style="display:none;">Редактирай</button>
+								<button type="submit" class="btn btn-primary template-button" style="display:none;">Запази</button>
 							</td>
 						</form>
 						<td>
