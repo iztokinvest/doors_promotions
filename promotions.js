@@ -189,6 +189,13 @@ if (hash) {
 }
 
 async function fetchGitHubPromoRelease() {
+	const urlParams = new URLSearchParams(window.location.search);
+	const hasPromotionsPage = urlParams.get("page") === "promotions";
+
+	if (!hasPromotionsPage) {
+		return;
+	}
+	
 	const response = await fetch("https://api.github.com/repos/iztokinvest/doors_promotions/releases/latest");
 	const currentVersion = document.getElementById("promo-extension-version");
 	const wpBody = document.getElementById("wpbody-content");
