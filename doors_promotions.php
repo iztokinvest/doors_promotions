@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.13.12
+Version: 1.14.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -99,6 +99,16 @@ class WP_Promotions_Updater
 
 if (is_admin()) {
 	new WP_Promotions_Updater(__FILE__);
+}
+
+function promoPluginData()
+{
+	if (! function_exists('get_plugin_data')) {
+		require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+	}
+	$plugin_data = get_plugin_data(__FILE__);
+
+	return $plugin_data;
 }
 
 function load_libraries($hook)
@@ -491,6 +501,7 @@ function promotions_settings_page()
 		</form>
 	</div>
 <?php
+	echo "<hr><div class='float-end me-5'>Версия на разширението: <span id='promo-extension-version'>" . promoPluginData()['Version'] . '</span></div>';
 }
 
 function promotions_list_page()
@@ -616,6 +627,7 @@ function promotions_list_page()
 		</form>
 	</div>
 <?php
+	echo "<hr><div class='float-end me-5'>Версия на разширението: <span id='promo-extension-version'>" . promoPluginData()['Version'] . '</span></div>';
 }
 
 function promotions_templates_page()
@@ -744,6 +756,7 @@ function promotions_templates_page()
 		</div>
 	</div>
 <?php
+	echo "<hr><div class='float-end me-5'>Версия на разширението: <span id='promo-extension-version'>" . promoPluginData()['Version'] . '</span></div>';
 }
 
 function handle_promotions_form()

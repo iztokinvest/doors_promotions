@@ -187,3 +187,22 @@ if (hash) {
 		history.replaceState("", document.title, window.location.pathname + window.location.search);
 	}
 }
+
+async function fetchGitHubPromoRelease() {
+	const response = await fetch("https://api.github.com/repos/iztokinvest/doors_promotions/releases/latest");
+	const currentVersion = document.getElementById("promo-extension-version");
+	const wpBody = document.getElementById("wpbody-content");
+
+	const data = await response.json();
+
+	if (data.tag_name && currentVersion && data.tag_name != currentVersion.innerHTML) {
+		wpBody.insertAdjacentHTML(
+			"afterbegin",
+			`<div class="alert alert-warning alert-dismissible fade show" role="alert">
+				Налична е нова версия на разширението: <strong>${data.tag_name}</strong>. В момента използвате <strong>${currentVersion.innerHTML}</strong>. <a href="plugins.php">Обновете от тук!</a>
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			</div>`
+		);
+	}
+}
+fetchGitHubPromoRelease();
