@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.14.1
+Version: 1.14.2
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -567,7 +567,6 @@ function promotions_list_page()
 							$row_color = '';
 							$row_status = 'active';
 							$rows_count['active']++;
-
 					}
 					?>
 					<tr <?php echo $row_color; ?>>
@@ -655,7 +654,7 @@ function promotions_templates_page()
 				<tr class="bg-secondary">
 					<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 						<td colspan="2" class="w-25 align-text-top"><input type="text" class="form-control" id="shortcode" name="shortcode" required>
-							<p class="text-warning">Трябва да присъстват думите:<br><b>product</b> - за продукт<br><b>worktime</b> - за работно време<br><b>text</b> - за текст<br><b>css</b> - за css</p>
+							<p class="text-warning">Трябва да присъстват думите:<br><b>product</b> - за продукт<br><b>worktime</b> - за работно време<br><b>text</b> - за текст<br><b>price</b> - за цени<br><b>other</b> - за друго<br><b>css</b> - за css</p>
 						</td>
 						<td class="w-25 align-text-top"><input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required></td>
 						<td style="text-align:left"><textarea class="form-control template_content" name="template_content"></textarea></td>
@@ -1074,13 +1073,15 @@ function filter($redirect_to_page)
 					<option value=''>Промоции</a>
 					<option value='worktime' " . (isset($_GET['filter']) && $_GET['filter'] == 'worktime' ? 'selected' : '') . ">Работни времена</a>
 					<option value='text' " . (isset($_GET['filter']) && $_GET['filter'] == 'text' ? 'selected' : '') . ">Текстове</a>
+					<option value='price' " . (isset($_GET['filter']) && $_GET['filter'] == 'price' ? 'selected' : '') . ">Цени</a>
+					<option value='other' " . (isset($_GET['filter']) && $_GET['filter'] == 'other' ? 'selected' : '') . ">Друго</a>
 					<option value='css' " . (isset($_GET['filter']) && $_GET['filter'] == 'css' ? 'selected' : '') . ">CSS</a>
 				</select>
 			</form>";
 }
 function filter_where_clause()
 {
-	$filter = isset($_GET['filter']) && in_array($_GET['filter'], ['worktime', 'text', 'css']) ? $_GET['filter'] : '';
+	$filter = isset($_GET['filter']) && in_array($_GET['filter'], ['worktime', 'text', 'price', 'other', 'css']) ? $_GET['filter'] : '';
 
 	$where_clause = $filter ? "shortcode LIKE '%{$filter}%'" : "shortcode NOT LIKE '%worktime%' AND shortcode NOT LIKE '%text%' AND shortcode NOT LIKE '%css%'";
 
