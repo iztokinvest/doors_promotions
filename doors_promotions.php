@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.14.2
+Version: 1.14.3
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -139,6 +139,9 @@ function load_libraries($hook)
 		'assets/js/awesome_notifications.js', array(), '1.0', true);
 	wp_enqueue_style('awesome-notifications-css', plugin_dir_url(__FILE__) .
 		'assets/css/awesome_notifications.css', array(), '1.0');
+
+	wp_enqueue_style('custom-css', plugin_dir_url(__FILE__) .
+	'assets/css/custom.css', array(), '1.0');
 }
 
 function enqueue_promotions_script()
@@ -860,6 +863,12 @@ function handle_edit_promo()
 			wp_redirect(admin_url('admin.php?page=promotions&filter=worktime#msg=Успешно редактиране.'));
 		} else if (preg_match('/text/', $promo_shortcode)) {
 			wp_redirect(admin_url('admin.php?page=promotions&filter=text#msg=Успешно редактиране.'));
+		} else if (preg_match('/price/', $promo_shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions&filter=price#msg=Успешно редактиране.'));
+		} else if (preg_match('/other/', $promo_shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions&filter=other#msg=Успешно редактиране.'));
+		} else if (preg_match('/css/', $promo_shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions&filter=css#msg=Успешно редактиране.'));
 		} else {
 			wp_redirect(admin_url('admin.php?page=promotions#msg=Успешно редактиране.'));
 		}
@@ -1038,6 +1047,12 @@ function handle_update_template()
 			wp_redirect(admin_url('admin.php?page=promotions_templates&filter=worktime#msg=Шаблонът е редактиран.'));
 		} else if (preg_match('/text/', $shortcode)) {
 			wp_redirect(admin_url('admin.php?page=promotions_templates&filter=text#msg=Шаблонът е редактиран.'));
+		} else if (preg_match('/price/', $shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions_templates&filter=price#msg=Шаблонът е редактиран.'));
+		} else if (preg_match('/other/', $shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions_templates&filter=other#msg=Шаблонът е редактиран.'));
+		} else if (preg_match('/css/', $shortcode)) {
+			wp_redirect(admin_url('admin.php?page=promotions_templates&filter=css#msg=Шаблонът е редактиран.'));
 		} else {
 			wp_redirect(admin_url('admin.php?page=promotions_templates#msg=Шаблонът е редактиран.'));
 		}
@@ -1083,7 +1098,7 @@ function filter_where_clause()
 {
 	$filter = isset($_GET['filter']) && in_array($_GET['filter'], ['worktime', 'text', 'price', 'other', 'css']) ? $_GET['filter'] : '';
 
-	$where_clause = $filter ? "shortcode LIKE '%{$filter}%'" : "shortcode NOT LIKE '%worktime%' AND shortcode NOT LIKE '%text%' AND shortcode NOT LIKE '%css%'";
+	$where_clause = $filter ? "shortcode LIKE '%{$filter}%'" : "shortcode NOT LIKE '%worktime%' AND shortcode NOT LIKE '%text%' AND shortcode NOT LIKE '%price%' AND shortcode NOT LIKE '%other%' AND shortcode NOT LIKE '%css%'";
 
 	return $where_clause;
 }
