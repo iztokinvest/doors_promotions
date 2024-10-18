@@ -213,3 +213,38 @@ async function fetchGitHubPromoRelease() {
 	}
 }
 fetchGitHubPromoRelease();
+
+
+function findAndReplaceTextInTawkBubble(doc) {
+	const spans = doc.querySelectorAll(".tawk-chat-bubble span");
+
+	for (let span of spans) {
+		const originalText = span.textContent;
+		const newText =
+			"Здравейте! Имаме активни промоции до 19.10.24: БЕЗПЛАТЕН Монтаж и БЕЗПЛАТНО Взимане на Размери. Ако имате въпроси, не се колебайте да ни пишете тук в чата или да се свържете с нас на телефони: 052 69 1000, 0878 933 556 или 0899 69 1014"; // Replace with the text you want
+		span.textContent = newText;
+		console.log(`Replaced "${originalText}" with "${newText}"`);
+	}
+}
+
+// Function to search in the current document and all iframes
+function searchAndReplaceAllDocuments() {
+	// Check current document
+	findAndReplaceTextInTawkBubble(document);
+
+	// Check all iframes
+	const iframes = document.getElementsByTagName("iframe");
+	for (let iframe of iframes) {
+		try {
+			findAndReplaceTextInTawkBubble(iframe.contentDocument || iframe.contentWindow.document);
+		} catch (e) {
+			console.log("Could not access iframe content:", e);
+		}
+	}
+}
+
+// Run the function immediately or on an interval
+searchAndReplaceAllDocuments();
+
+// Or set interval for repeated checking
+setInterval(searchAndReplaceAllDocuments, 5000); 

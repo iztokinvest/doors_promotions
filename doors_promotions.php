@@ -180,7 +180,7 @@ function fetch_shortcodes_from_db()
 	return $shortcodes;
 }
 
-function load_shortcode_template($content, $placeholders)
+function load_shortcode_template($shortcode_name, $content, $placeholders)
 {
 	if ($placeholders['worktime']) {
 		$workday = additional_shortcodes('workday', $content);
@@ -196,6 +196,46 @@ function load_shortcode_template($content, $placeholders)
 		}
 	}
 
+	if (preg_match('/tawk/', $shortcode_name)) {
+		return <<<HTML
+			<script>
+				function findAndReplaceTextInTawkBubble(doc) {
+					const spans = doc.querySelectorAll(".tawk-chat-bubble span");
+					const tawkButton = doc.querySelector(".tawk-button");
+
+					for (let span of spans) {
+						const originalText = span.textContent;
+						const newText =
+							"{$placeholders['alt']}";
+						span.textContent = newText;
+						console.log('Replaced "' + originalText + '" with "' + newText + '"');
+					}
+				}
+
+				function searchAndReplaceAllDocuments() {
+					findAndReplaceTextInTawkBubble(document);
+
+					const iframes = document.getElementsByTagName("iframe");
+					for (let iframe of iframes) {
+						try {
+							findAndReplaceTextInTawkBubble(iframe.contentDocument || iframe.contentWindow.document);
+						} catch (e) {
+							console.log("Could not access iframe content:", e);
+						}
+					}
+				}
+
+				searchAndReplaceAllDocuments();
+
+				if (tawkButton) {
+					tawkButton.addeventListener("click", searchAndReplaceAllDocuments);
+				}
+
+				setInterval(searchAndReplaceAllDocuments, 5000);
+			</script>
+		HTML;
+	}
+
 	foreach ($placeholders as $key => $value) {
 		$content = str_replace("[$key]", $value, $content);
 	}
@@ -203,7 +243,7 @@ function load_shortcode_template($content, $placeholders)
 	return $content;
 }
 
-function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds)
+function shortcodes($shortcode_name, $image, $alt, $timer_days, $timer_hours, $timer_minutes, $timer_seconds)
 {
 	$shortcodes = [];
 	$worktime = false;
@@ -212,7 +252,7 @@ function shortcodes($image, $alt, $timer_days, $timer_hours, $timer_minutes, $ti
 		if (preg_match('/workday/', $data['content'])) {
 			$worktime = true;
 		}
-		$shortcodes[$key] = load_shortcode_template($data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'worktime' => $worktime]);
+		$shortcodes[$key] = load_shortcode_template($shortcode_name, $data['content'], ['image' => $image, 'alt' => $alt, 'timer-days' => $timer_days, 'timer-hours' => $timer_hours, 'timer-minutes' => $timer_minutes, 'timer-seconds' => $timer_seconds, 'worktime' => $worktime]);
 	}
 
 	return $shortcodes;
@@ -239,7 +279,7 @@ function handle_shortcode($atts, $shortcode)
 			$timer_minutes = '<span id="timer-minutes" data-end-date="' . $promo->end_date . '"></span>';
 			$timer_seconds = '<span id="timer-seconds" data-end-date="' . $promo->end_date . '"></span>';
 
-			return shortcodes(esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds)[$shortcode];
+			return shortcodes($promo->shortcode, esc_url($promo->image), esc_attr($promo->title), $timer_days, $timer_hours, $timer_minutes, $timer_seconds)[$shortcode];
 		}
 	}
 
