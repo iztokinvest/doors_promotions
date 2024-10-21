@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.16.2
+Version: 1.17.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -141,7 +141,7 @@ function load_libraries($hook)
 		'assets/css/awesome_notifications.css', array(), '1.0');
 
 	wp_enqueue_style('custom-css', plugin_dir_url(__FILE__) .
-	'assets/css/custom.css', array(), '1.0');
+		'assets/css/custom.css', array(), '1.0');
 }
 
 function enqueue_promotions_script()
@@ -199,16 +199,29 @@ function load_shortcode_template($shortcode_name, $content, $placeholders)
 	if (preg_match('/tawk/', $shortcode_name)) {
 		return <<<HTML
 			<script>
+				window.Tawk_API = window.Tawk_API || {};
+				window.Tawk_API.onLoad = function(){
+					searchAndReplaceAllDocuments();
+				};
+
+				window.Tawk_API = window.Tawk_API || {};
+				window.Tawk_API.onChatMaximized = function(){
+					setTimeout(() => {
+						
+						searchAndReplaceAllDocuments();
+					}, 1000);
+				};
+
 				function findAndReplaceTextInTawkBubble(doc) {
 					const spans = doc.querySelectorAll(".tawk-chat-bubble span");
-					const tawkButton = doc.querySelector(".tawk-button");
 
 					for (let span of spans) {
 						const originalText = span.textContent;
+						if (span.textContent === "...") {
 						const newText =
 							"{$placeholders['alt']}";
-						span.textContent = newText;
-						console.log('Replaced "' + originalText + '" with "' + newText + '"');
+							span.textContent = newText;
+						}
 					}
 				}
 
@@ -217,21 +230,9 @@ function load_shortcode_template($shortcode_name, $content, $placeholders)
 
 					const iframes = document.getElementsByTagName("iframe");
 					for (let iframe of iframes) {
-						try {
-							findAndReplaceTextInTawkBubble(iframe.contentDocument || iframe.contentWindow.document);
-						} catch (e) {
-							console.log("Could not access iframe content:", e);
-						}
+						findAndReplaceTextInTawkBubble(iframe.contentDocument || iframe.contentWindow.document);
 					}
 				}
-
-				searchAndReplaceAllDocuments();
-
-				if (tawkButton) {
-					tawkButton.addeventListener("click", searchAndReplaceAllDocuments);
-				}
-
-				setInterval(searchAndReplaceAllDocuments, 5000);
 			</script>
 		HTML;
 	}
@@ -697,7 +698,8 @@ function promotions_templates_page()
 				<tr class="bg-secondary">
 					<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 						<td colspan="2" class="w-25 align-text-top"><input type="text" class="form-control" id="shortcode" name="shortcode" required>
-							<p class="text-warning">Трябва да присъстват думите:<br><b>product</b> - за продукт<br><b>worktime</b> - за работно време<br><b>text</b> - за текст<br><b>price</b> - за цени<br><b>other</b> - за друго<br><b>css</b> - за css</p>
+							<p class="text-warning">Трябва да присъстват думите:<br><b>product</b> - за продукт<br><b>worktime</b> - за работно време<br><b>text</b> - за текст<br><b>price</b> - за цени<br><b>other</b> - за друго<br><b>css</b> - за css<br><b>tawk</b> - за tawk.to чат
+							</p>
 						</td>
 						<td class="w-25 align-text-top"><input type="text" class="form-control" id="shortcode_name" name="shortcode_name" required></td>
 						<td style="text-align:left"><textarea class="form-control template_content" name="template_content"></textarea></td>
@@ -791,6 +793,20 @@ function promotions_templates_page()
 					<div class="accordion-body">
 						<ul>
 							<li><b>&lt;style&gt;&lt;/style&gt;</b> Добавяне на CSS код</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="flush-headingFive">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFive" aria-expanded="false" aria-controls="flush-collapseFive">
+						Tawk.to
+					</button>
+				</h2>
+				<div id="flush-collapseFive" class="accordion-collapse collapse" aria-labelledby="flush-headingFive" data-bs-parent="#accordionFlushExample">
+					<div class="accordion-body">
+						<ul>
+							<li><b>[alt]</b> Съобщенито за чата се въвежда като alt текст на банера. В tawk.to не трябва да има съобщение, а вместо него да са добавени три точки "...".</li>
 						</ul>
 					</div>
 				</div>
