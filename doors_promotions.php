@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.17.1
+Version: 1.17.2
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -197,44 +197,44 @@ function load_shortcode_template($shortcode_name, $content, $placeholders)
 	}
 
 	if (preg_match('/tawk/', $shortcode_name)) {
-		return <<<HTML
-			<script>
-				window.Tawk_API = window.Tawk_API || {};
-				window.Tawk_API.onLoad = function(){
-					searchAndReplaceAllDocuments();
-				};
+return <<<HTML
+	<script>
+		window.Tawk_API = window.Tawk_API || {};
+		window.Tawk_API.onLoad = function(){
+			searchAndReplaceAllDocuments();
+		};
 
-				window.Tawk_API = window.Tawk_API || {};
-				window.Tawk_API.onChatMaximized = function(){
-					setTimeout(() => {
-						
-						searchAndReplaceAllDocuments();
-					}, 1000);
-				};
+		window.Tawk_API = window.Tawk_API || {};
+		window.Tawk_API.onChatMaximized = function(){
+			setTimeout(() => {
+				
+				searchAndReplaceAllDocuments();
+			}, 1000);
+		};
 
-				function findAndReplaceTextInTawkBubble(doc) {
-					const spans = doc.querySelectorAll(".tawk-chat-bubble span");
+		function findAndReplaceTextInTawkBubble(doc) {
+			const spans = doc.querySelectorAll(".tawk-chat-bubble span");
 
-					for (let span of spans) {
-						const originalText = span.textContent;
-						if (span.textContent === "...") {
-						const newText =
-							"{$placeholders['alt']}";
-							span.textContent = newText;
-						}
-					}
+			for (let span of spans) {
+				const originalText = span.textContent;
+				if (span.textContent === "...") {
+				const newText =
+					"{$placeholders['alt']}";
+					span.textContent = newText;
 				}
+			}
+		}
 
-				function searchAndReplaceAllDocuments() {
-					findAndReplaceTextInTawkBubble(document);
+		function searchAndReplaceAllDocuments() {
+			findAndReplaceTextInTawkBubble(document);
 
-					const iframes = document.getElementsByTagName("iframe");
-					for (let iframe of iframes) {
-						findAndReplaceTextInTawkBubble(iframe.contentDocument || iframe.contentWindow.document);
-					}
-				}
-			</script>
-		HTML;
+			const iframes = document.getElementsByTagName("iframe");
+			for (let iframe of iframes) {
+				findAndReplaceTextInTawkBubble(iframe.contentDocument || iframe.contentWindow.document);
+			}
+		}
+	</script>
+HTML;
 	}
 
 	foreach ($placeholders as $key => $value) {
