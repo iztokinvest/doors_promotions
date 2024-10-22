@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.17.0
+Version: 1.17.1
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -1169,7 +1169,7 @@ function force_check_for_promo_plugin_updates()
 		$plugin_file = 'doors_promotions/doors_promotions.php';
 		$action = "upgrade-plugin_$plugin_file";
 		$nonce = wp_create_nonce($action);
-		$update_url = admin_url("update.php?action=upgrade-plugin&plugin=doors_promotions%doors_promotions.php&_wpnonce=$nonce");
+		$update_url = admin_url("update.php?action=upgrade-plugin&plugin=doors_promotions%2Fdoors_promotions.php&_wpnonce=$nonce");
 		wp_redirect($update_url);
 		exit;
 	}
