@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.17.2
+Version: 1.17.3
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -197,42 +197,53 @@ function load_shortcode_template($shortcode_name, $content, $placeholders)
 	}
 
 	if (preg_match('/tawk/', $shortcode_name)) {
-return <<<HTML
+		$content = <<<HTML
+	{$content}
 	<script>
 		window.Tawk_API = window.Tawk_API || {};
+		
 		window.Tawk_API.onLoad = function(){
-			searchAndReplaceAllDocuments();
+			let statusMsg = '';
+			const tawkButton = document.getElementById('tawk-button');
+			const tawkDiv = document.getElementById('tawk-div');
+			const tawkChat = document.getElementById('tawk-chat');
+			const pageStatus = window.Tawk_API.getStatus();
+			
+			window.Tawk_API.hideWidget();
+			
+			if(pageStatus === 'online'){
+				statusMsg = 'На линия сме!';
+			}else{
+				statusMsg = 'Пишете ни!';
+			}
+
+			tawkButton.style.display = "block";
+			tawkButton.innerHTML = statusMsg;
+		
+			tawkButton.addEventListener('click', () => {
+				tawkDiv.style.display = (tawkDiv.style.display === "block") ? "none" : "block";
+				sessionStorage.setItem('tawk-div', true);
+			});
+
+			tawkChat.addEventListener('click', () => {
+				window.Tawk_API.maximize();
+			});
+
+			tawkDiv.addEventListener('click', () => {
+				tawkDiv.style.display = "none";
+				sessionStorage.setItem('tawk-div', true);
+			})
+
+			if (!sessionStorage.getItem('tawk-div')) {
+				tawkDiv.style.display = "block";
+			}
+
 		};
 
-		window.Tawk_API = window.Tawk_API || {};
-		window.Tawk_API.onChatMaximized = function(){
-			setTimeout(() => {
-				
-				searchAndReplaceAllDocuments();
-			}, 1000);
-		};
-
-		function findAndReplaceTextInTawkBubble(doc) {
-			const spans = doc.querySelectorAll(".tawk-chat-bubble span");
-
-			for (let span of spans) {
-				const originalText = span.textContent;
-				if (span.textContent === "...") {
-				const newText =
-					"{$placeholders['alt']}";
-					span.textContent = newText;
-				}
-			}
+		window.Tawk_API.onChatMinimized = function(){
+			tawkDiv.style.display = "none";
 		}
 
-		function searchAndReplaceAllDocuments() {
-			findAndReplaceTextInTawkBubble(document);
-
-			const iframes = document.getElementsByTagName("iframe");
-			for (let iframe of iframes) {
-				findAndReplaceTextInTawkBubble(iframe.contentDocument || iframe.contentWindow.document);
-			}
-		}
 	</script>
 HTML;
 	}
@@ -806,7 +817,22 @@ function promotions_templates_page()
 				<div id="flush-collapseFive" class="accordion-collapse collapse" aria-labelledby="flush-headingFive" data-bs-parent="#accordionFlushExample">
 					<div class="accordion-body">
 						<ul>
-							<li><b>[alt]</b> Съобщенито за чата се въвежда като alt текст на банера. В tawk.to не трябва да има съобщение, а вместо него да са добавени три точки "...".</li>
+							<li><b>[alt]</b> Съобщенито за чата се въвежда като alt текст на банера. tawk-div e id, което показва съобщението. tawk-chat е id на бутона за стартиране на tawk.to. tawk-button e id на бутона, с който се показва прозорецът със съобщението и трябва да бъде без текст, защото той се извлича автоматично според онлайн статуса на tawk.to. Примерен HTML:
+								<div>
+									<textarea rows="11" cols="70">
+<div id="tawk-div">
+	<div id="close-div">
+	<span id="close-btn">❌</span>
+	</div>
+	[alt]
+	<div>
+		<button id="tawk-chat">Чат на живо</button>
+	</div>
+</div>
+<button id="tawk-button"></button>
+									</textarea>
+								</div>
+							</li>
 						</ul>
 					</div>
 				</div>
