@@ -195,7 +195,7 @@ async function fetchGitHubPromoRelease() {
 	if (!hasPromotionsPage) {
 		return;
 	}
-	
+
 	const response = await fetch("https://api.github.com/repos/iztokinvest/doors_promotions/releases/latest");
 	const currentVersion = document.getElementById("promo-extension-version");
 	const wpBody = document.getElementById("wpbody-content");
@@ -213,3 +213,81 @@ async function fetchGitHubPromoRelease() {
 	}
 }
 fetchGitHubPromoRelease();
+
+//AJAX
+jQuery(document).ready(function ($) {
+	$(".edit-promo").click(function () {
+		const $this = $(this);
+		const startDate = $this.closest("tr").find(".promo-start-date").val();
+		const endDate = $this.closest("tr").find(".promo-end-date").val();
+
+		$.ajax({
+			url: ajaxurl,
+			method: "POST",
+			data: {
+				action: "edit_promo",
+				promo_id: $this.data("id"),
+				promo_title: $this.closest("tr").find(".promo-title").val(),
+				promo_shortcode: $this.closest("tr").find(".promo-shortcode").val(),
+				promo_start_date: startDate,
+				promo_end_date: endDate,
+				promo_active: $this.closest("tr").find(".promo-active").prop("checked"),
+			},
+			success: (response) => {
+				if (response.success) {
+					notifier.success("Банерът е редактиран.");
+				}
+
+				function parseDate(dateStr) {
+					var parts = dateStr.split("/");
+					var day = parseInt(parts[0], 10);
+					var month = parseInt(parts[1], 10) - 1;
+					var year = parseInt(parts[2], 10);
+
+					year += year < 100 ? 2000 : 0;
+
+					return new Date(year, month, day);
+				}
+
+				switch (true) {
+					case new parseDate(startDate) > new Date():
+						$this.closest("tr").css("background-color", "#00dd7761");
+						break;
+					case parseDate(endDate) < new Date():
+						$this.closest("tr").css("background-color", "#ff000040");
+						break;
+					case new parseDate(endDate) < new Date(new Date().setDate(new Date().getDate() + 6)):
+						$this.closest("tr").css("background-color", "#ffff0040");
+						break;
+					default:
+						$this.closest("tr").css("background-color", "");
+						break;
+				}
+			},
+			error: function () {
+				frame_notifier.alert(`Грешка при редактиране на банер.`);
+			},
+		});
+	});
+
+	$(".delete-promo").click(function () {
+		const $this = $(this);
+		$.ajax({
+			url: ajaxurl,
+			method: "POST",
+			data: {
+				action: "delete_promo",
+				promo_id: $this.data("id"),
+			},
+			success: (response) => {
+				if (response.success) {
+					$this.closest("tr").remove();
+					notifier.success("Банерът е изтрит.");
+				}
+			},
+			error: function () {
+				frame_notifier.alert(`Грешка при изтриване на банер.`);
+			},
+		});
+	});
+});

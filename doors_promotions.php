@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.17.3
+Version: 1.18.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -147,7 +147,7 @@ function load_libraries($hook)
 function enqueue_promotions_script()
 {
 	$script_version = filemtime(plugin_dir_path(__FILE__) . 'promotions.js');
-	wp_register_script('promotions-script', plugin_dir_url(__FILE__) . 'promotions.js', array(), $script_version, true);
+	wp_register_script('promotions-script', plugin_dir_url(__FILE__) . 'promotions.js', array('jquery'), $script_version, true);
 	wp_enqueue_script('promotions-script');
 	wp_enqueue_style('vanillajs-datepicker-css', 'https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css');
 	wp_enqueue_script('vanillajs-datepicker-js', 'https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker.min.js', array(), null, true);
@@ -625,32 +625,28 @@ function promotions_list_page()
 					}
 					?>
 					<tr <?php echo $row_color; ?>>
-						<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-							<td><?php echo $rows_count[$row_status]; ?></td>
-							<td><?php echo $row->category ? get_term($row->category)->name : ''; ?></td>
-							<td>
-								<?php
-								echo '<select name="promo_shortcode" id="promo_shortcode">';
-								$shortcodes = fetch_shortcodes_from_db();
-								foreach ($shortcodes as $shortcode => $data) {
-									$name = esc_html($data['name']);
-									$selected = ($row->shortcode == $shortcode) ? 'selected' : '';
-									echo "<option value='$shortcode' $selected>$name</option>";
-								}
-								echo '</select>';
-								?>
-							</td>
-							<td><textarea class="form-control" name="promo_title" id="promo_title"><?php echo esc_html($row->title); ?></textarea></td>
-							<td><?php echo $show_image; ?></td>
-							<td><input type="text" class="form-control datepicker-input" name="promo_start_date" id="promo_start_date" value="<?php echo date('d/m/Y', strtotime($row->start_date)); ?>" /></td>
-							<td><input type="text" class="form-control datepicker-input" name="promo_end_date" id="promo_end_date" value="<?php echo date('d/m/Y', strtotime($row->end_date)); ?>" /></td>
-							<td><input type="checkbox" name="promo_active" id="promo_active" <?php echo ($row->active) ? 'checked' : ''; ?> /></td>
-							<td>
-								<input type="hidden" name="action" value="edit_promo">
-								<input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
-								<button type="submit" class="btn btn-primary">Редактирай</button>
-							</td>
-						</form>
+						<td><?php echo $rows_count[$row_status]; ?></td>
+						<td><?php echo $row->category ? get_term($row->category)->name : ''; ?></td>
+						<td>
+							<?php
+							echo '<select class="promo-shortcode">';
+							$shortcodes = fetch_shortcodes_from_db();
+							foreach ($shortcodes as $shortcode => $data) {
+								$name = esc_html($data['name']);
+								$selected = ($row->shortcode == $shortcode) ? 'selected' : '';
+								echo "<option value='$shortcode' $selected>$name</option>";
+							}
+							echo '</select>';
+							?>
+						</td>
+						<td><textarea class="form-control promo-title"><?php echo esc_html($row->title); ?></textarea></td>
+						<td><?php echo $show_image; ?></td>
+						<td><input type="text" class="form-control datepicker-input promo-start-date" value="<?php echo date('d/m/Y', strtotime($row->start_date)); ?>" /></td>
+						<td><input type="text" class="form-control datepicker-input promo-end-date" value="<?php echo date('d/m/Y', strtotime($row->end_date)); ?>" /></td>
+						<td><input type="checkbox" class="promo-active" <?php echo ($row->active) ? 'checked' : ''; ?> /></td>
+						<td>
+							<button type="button" class="btn btn-primary edit-promo" data-id="<?php echo esc_attr($row->id); ?>">Редактирай</button>
+						</td>
 						<td>
 							<form method="get">
 								<input type="hidden" name="page" value="promotions_settings">
@@ -661,11 +657,7 @@ function promotions_list_page()
 							</form>
 						</td>
 						<td>
-							<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-								<input type="hidden" name="action" value="delete_promo">
-								<input type="hidden" name="promo_id" value="<?php echo esc_attr($row->id); ?>">
-								<button type="submit" class="btn btn-danger">Изтрий</button>
-							</form>
+							<button type="button" class="btn btn-danger delete-promo" data-id="<?php echo esc_attr($row->id); ?>">Изтрий</button>
 						</td>
 					</tr>
 				<?php endforeach; ?>
@@ -913,89 +905,61 @@ function handle_promotions_form()
 	}
 }
 
-function handle_edit_promo()
+add_action('wp_ajax_edit_promo', 'edit_promo');
+function edit_promo()
 {
-	if (isset($_POST['action']) && $_POST['action'] == 'edit_promo' && isset($_POST['promo_id'])) {
-		global $wpdb;
-		$table_name = $wpdb->prefix . 'doors_promotions';
-		$promo_id = intval($_POST['promo_id']);
-		$promo_title = sanitize_text_field($_POST['promo_title']);
-		$promo_shortcode = sanitize_text_field($_POST['promo_shortcode']);
-		$promo_start_date = date_format(date_create_from_format('d/m/Y', sanitize_text_field($_POST['promo_start_date'])), 'Y-m-d');
-		$promo_end_date = date_format(date_create_from_format('d/m/Y', sanitize_text_field($_POST['promo_end_date'])), 'Y-m-d');
-		$promo_active = $_POST['promo_active'] == 'on' ? '1' : '0';
+	global $wpdb;
+	$table_name = $wpdb->prefix . 'doors_promotions';
+	$promo_id = intval($_POST['promo_id']);
+	$promo_title = sanitize_text_field($_POST['promo_title']);
+	$promo_shortcode = sanitize_text_field($_POST['promo_shortcode']);
+	$promo_start_date = date_format(date_create_from_format('d/m/Y', sanitize_text_field($_POST['promo_start_date'])), 'Y-m-d');
+	$promo_end_date = date_format(date_create_from_format('d/m/Y', sanitize_text_field($_POST['promo_end_date'])), 'Y-m-d');
+	$promo_active = $_POST['promo_active'] == 'true' ? '1' : '0';
 
-		$wpdb->update(
-			$table_name,
-			[
-				'title' => $promo_title,
-				'shortcode' => $promo_shortcode,
-				'start_date' => $promo_start_date,
-				'end_date' => $promo_end_date,
-				'active' => $promo_active
-			],
-			[
-				'id' => $promo_id
-			]
-		);
+	$wpdb->update(
+		$table_name,
+		[
+			'title' => $promo_title,
+			'shortcode' => $promo_shortcode,
+			'start_date' => $promo_start_date,
+			'end_date' => $promo_end_date,
+			'active' => $promo_active
+		],
+		[
+			'id' => $promo_id
+		]
+	);
 
-		clear_cache();
-
-		if (preg_match('/worktime/', $promo_shortcode)) {
-			wp_redirect(admin_url('admin.php?page=promotions&filter=worktime#msg=Успешно редактиране.'));
-		} else if (preg_match('/text/', $promo_shortcode)) {
-			wp_redirect(admin_url('admin.php?page=promotions&filter=text#msg=Успешно редактиране.'));
-		} else if (preg_match('/price/', $promo_shortcode)) {
-			wp_redirect(admin_url('admin.php?page=promotions&filter=price#msg=Успешно редактиране.'));
-		} else if (preg_match('/other/', $promo_shortcode)) {
-			wp_redirect(admin_url('admin.php?page=promotions&filter=other#msg=Успешно редактиране.'));
-		} else if (preg_match('/css/', $promo_shortcode)) {
-			wp_redirect(admin_url('admin.php?page=promotions&filter=css#msg=Успешно редактиране.'));
-		} else {
-			wp_redirect(admin_url('admin.php?page=promotions#msg=Успешно редактиране.'));
-		}
-
-		exit;
-	} else {
-		var_dump($_POST);
-		exit;
-	}
+	clear_cache();
+	wp_send_json_success();
 }
 
-function handle_delete_promo()
+add_action('wp_ajax_delete_promo', 'delete_promo');
+function delete_promo()
 {
-	if (isset($_POST['action']) && $_POST['action'] == 'delete_promo' && isset($_POST['promo_id'])) {
-		global $wpdb;
-		$table_name = $wpdb->prefix . 'doors_promotions';
-		$promo_id = intval($_POST['promo_id']);
+	global $wpdb;
+	$table_name = $wpdb->prefix . 'doors_promotions';
 
-		// Вземи данните за изображението преди да изтриеш записа
-		$promo = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $promo_id));
-		if ($promo) {
-			// Преброй колко пъти се среща това изображение в базата данни
-			$image_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE image = %s", $promo->image));
+	// Вземи данните за изображението преди да изтриеш записа
+	$promo = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $_POST['promo_id']));
+	if ($promo) {
+		// Преброй колко пъти се среща това изображение в базата данни
+		$image_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE image = %s", $promo->image));
 
-			// Изтрий записа от базата данни
-			$wpdb->delete($table_name, array('id' => $promo_id));
+		// Изтрий записа от базата данни
+		$wpdb->delete($table_name, array('id' => $_POST['promo_id']));
 
-			if ($image_count == 1) {
-				$image_path = str_replace(site_url(), ABSPATH, $promo->image);
-				if (file_exists($image_path)) {
-					unlink($image_path);
-				}
+		if ($image_count == 1) {
+			$image_path = str_replace(site_url(), ABSPATH, $promo->image);
+			if (file_exists($image_path)) {
+				unlink($image_path);
 			}
 		}
-
-		clear_cache();
-
-		// Пренасочи, за да избегнеш повторно изпращане на формата
-		wp_redirect(admin_url('admin.php?page=promotions#msg=Банерът е изтрит'));
-		exit;
-	} else {
-		// За отстраняване на грешки
-		var_dump($_POST);
-		exit;
 	}
+
+	clear_cache();
+	wp_send_json_success();
 }
 
 function handle_delete_expired()
@@ -1287,8 +1251,6 @@ add_action('admin_enqueue_scripts', 'load_libraries');
 add_action('admin_enqueue_scripts', 'enqueue_promotions_script');
 add_action('admin_menu', 'promotions_menu');
 add_action('admin_post_submit_promo', 'handle_promotions_form');
-add_action('admin_post_edit_promo', 'handle_edit_promo');
-add_action('admin_post_delete_promo', 'handle_delete_promo');
 add_action('admin_post_delete_expired', 'handle_delete_expired');
 add_action('admin_post_activate_all', 'handle_activate_all');
 add_action('admin_post_add_new_template', 'handle_add_new_template');
