@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		promoImageUploadInput.addEventListener("change", function (event) {
 			const file = event.target.files[0];
 			if (file) {
-				if (file.type === "image/jpeg" || file.type === "image/png") {
+				if (file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/webp") {
 					const reader = new FileReader();
 					reader.onload = function (e) {
 						promoImageUploadPreview.src = e.target.result;
@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
 					};
 					reader.readAsDataURL(file);
 				} else {
-					notifier.warning("Разрешени са само файлове с формат JPG и PNG");
+					notifier.warning("Разрешени са само файлове с формат JPG, PNG и WEBP.");
 					promoImageUploadInput.value = null;
 					promoImageUploadPreview.style.display = "none";
 				}
