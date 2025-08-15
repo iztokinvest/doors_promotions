@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.18.1
+Version: 1.18.2
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -441,6 +441,63 @@ function initialize_shortcodes()
 
 function promotions_settings_page()
 {
+	// Function to build a nested category hierarchy
+	function get_category_hierarchy($taxonomy = 'product_cat', $parent = 0)
+	{
+		$terms = get_terms([
+			'taxonomy' => $taxonomy,
+			'parent' => $parent,
+			'hide_empty' => false,
+		]);
+
+		if (is_wp_error($terms) || empty($terms)) {
+			return [];
+		}
+
+		$hierarchy = [];
+		foreach ($terms as $term) {
+			$children = get_category_hierarchy($taxonomy, $term->term_id);
+			$hierarchy[] = [
+				'category' => $term,
+				'parent' => $parent > 0 ? get_term($parent, $taxonomy) : null,
+				'children' => $children,
+			];
+		}
+		return $hierarchy;
+	}
+
+	// Function to recursively display categories and their subcategories
+	function display_category_hierarchy($categories_hierarchy, $level = 0, $selected_category = null)
+	{
+		foreach ($categories_hierarchy as $category_info) {
+			// Check if category exists and is an object with term_id
+			if (!empty($category_info['category']) && is_object($category_info['category']) && property_exists($category_info['category'], 'term_id')) {
+				// Determine indentation based on level (e.g., 20px for each level)
+				$indent_style = $level > 0 ? 'style="margin-left: ' . ($level * 20) . 'px;"' : '';
+				// Bold base category (level 0), no bold for subcategories
+				$bold_start = $level === 0 ? '<strong>' : '';
+				$bold_end = $level === 0 ? '</strong>' : '';
+
+				// Output the category checkbox with label for alignment
+				echo '<div class="form-group " ' . $indent_style . '>';
+				echo '<label>';
+				echo '<input type="checkbox" name="promo_categories[]" value="' . esc_attr($category_info['category']->term_id) . '" '
+					. 'class="' . ($level === 0 ? 'base-category' : 'sub-category') . '" '
+					. 'data-category-id="' . esc_attr($category_info['category']->term_id) . '" '
+					. ($level > 0 && !empty($category_info['parent']) && is_object($category_info['parent']) ? 'data-parent-id="' . esc_attr($category_info['parent']->term_id) . '" ' : '')
+					. 'id="category_' . esc_attr($category_info['category']->term_id) . '" '
+					. (isset($selected_category) && $selected_category == esc_attr($category_info['category']->term_id) ? 'checked' : '') . '>';
+				echo $bold_start . '&nbsp;' . esc_html($category_info['category']->name) . $bold_end;
+				echo '</label>';
+				echo '</div>';
+
+				// Recursively process children if they exist
+				if (!empty($category_info['children'])) {
+					display_category_hierarchy($category_info['children'], $level + 1, $selected_category);
+				}
+			}
+		}
+	}
 ?>
 	<div class="wrap">
 		<h1>Промоции</h1>
@@ -474,7 +531,7 @@ function promotions_settings_page()
 				<tr>
 					<th scope="row">Заглавие (alt)</th>
 					<td>
-						<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" <?php echo isset($_GET['title']) ? 'value="' . $_GET['title'] . '"' : ''; ?> required>
+						<input type="text" class="form-control" name="promo_title" id="promo_title" placeholder="Заглавие" <?php echo isset($_GET['title']) ? 'value="' . esc_html($_GET['title']) . '"' : ''; ?> required>
 					</td>
 				</tr>
 				<tr>
@@ -494,55 +551,14 @@ function promotions_settings_page()
 					<th scope="row">Категории</th>
 					<td>
 						<?php
-						$product_categories = get_terms([
-							'taxonomy' => 'product_cat',
-							'hide_empty' => false,
-						]);
-
-						// Initialize the hierarchy array
-						$categories_hierarchy = [];
-
-						// First pass: Set up all parent categories
-						foreach ($product_categories as $category) {
-							if ($category->parent == 0) {
-								// This is a base category
-								$categories_hierarchy[$category->term_id] = [
-									'category' => $category,
-									'children' => []
-								];
-							}
-						}
-
-						// Second pass: Attach subcategories to their parents
-						foreach ($product_categories as $category) {
-							if ($category->parent != 0) {
-								// This is a subcategory
-								if (isset($categories_hierarchy[$category->parent])) {
-									$categories_hierarchy[$category->parent]['children'][] = $category;
-								} else {
-									// Initialize the parent if not already set
-									$categories_hierarchy[$category->parent] = [
-										'category' => null,
-										'children' => [$category]
-									];
-								}
-							}
-						}
+						// Fetch the category hierarchy
+						$categories_hierarchy = get_category_hierarchy('product_cat');
+						$selected_category = isset($_GET['category']) ? $_GET['category'] : null;
 
 						// Display the categories
-						foreach ($categories_hierarchy as $category_info) {
-							if ($category_info['category']) {
-								// Display base category in bold
-								echo '<div class="form-group row"><strong><input type="checkbox" name="promo_categories[]" value="' . esc_attr($category_info['category']->term_id) . '" class="base-category" data-category-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($category_info['category']->term_id) . '" ' . (isset($_GET['category']) && $_GET['category'] == esc_attr($category_info['category']->term_id) ? 'checked' : '') . '>' . esc_html($category_info['category']->name) . '</strong></div>';
-							}
-
-							// Display subcategories
-							if (!empty($category_info['children'])) {
-								foreach ($category_info['children'] as $subcategory) {
-									echo '<div class="form-group ms-3"><input type="checkbox" name="promo_categories[]" value="' . esc_attr($subcategory->term_id) . '" class="sub-category" data-parent-id="' . esc_attr($category_info['category']->term_id) . '" id="category_' . esc_attr($subcategory->term_id) . '" ' . (isset($_GET['category']) && $_GET['category'] == esc_attr($subcategory->term_id) ? 'checked' : '') . '>' . esc_html($subcategory->name) . '</div>';
-								}
-							}
-						}
+						echo '<div class="category-hierarchy">';
+						display_category_hierarchy($categories_hierarchy, 0, $selected_category);
+						echo '</div>';
 						?>
 					</td>
 				</tr>
@@ -556,7 +572,7 @@ function promotions_settings_page()
 		</form>
 	</div>
 <?php
-	echo "<hr><div class='float-end me-5'>Версия на разширението: <span id='promo-extension-version'>" . promoPluginData()['Version'] . '</span></div>';
+	echo "<hr><div class='float-end me-5'>Версия на разширението: <span id='promo-extension-version'>" . esc_html(promoPluginData()['Version']) . '</span></div>';
 }
 
 function promotions_list_page()

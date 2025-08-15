@@ -100,15 +100,33 @@ document.addEventListener("DOMContentLoaded", function () {
 	document.querySelectorAll(".base-category").forEach(function (baseCheckbox) {
 		baseCheckbox.addEventListener("change", function () {
 			var categoryId = this.getAttribute("data-category-id");
-			var subCategories = document.querySelectorAll('.sub-category[data-parent-id="' + categoryId + '"]');
-			subCategories.forEach(function (subCheckbox) {
+			// Recursively get all descendant subcategories
+			var allSubCategories = getAllDescendants(categoryId);
+
+			allSubCategories.forEach(function (subCheckbox) {
 				subCheckbox.disabled = baseCheckbox.checked;
 				if (baseCheckbox.checked) {
-					subCheckbox.checked = false; // Uncheck subcategory if base is checked
+					subCheckbox.checked = false; // Uncheck all descendant subcategories
 				}
 			});
 		});
 	});
+
+	// Recursive function to get all descendant subcategories
+	function getAllDescendants(parentId) {
+		var descendants = [];
+		var directSubCategories = document.querySelectorAll('.sub-category[data-parent-id="' + parentId + '"]');
+
+		directSubCategories.forEach(function (subCheckbox) {
+			var subCategoryId = subCheckbox.getAttribute("data-category-id");
+			descendants.push(subCheckbox);
+			// Recursively get descendants of this subcategory
+			var deeperDescendants = getAllDescendants(subCategoryId);
+			descendants = descendants.concat(deeperDescendants);
+		});
+
+		return descendants;
+	}
 
 	document.querySelectorAll("textarea.template_content").forEach(function (textarea) {
 		const editor = CodeMirror.fromTextArea(textarea, {
