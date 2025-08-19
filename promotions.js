@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	const promoImageUploadInput = document.getElementById("promo_image");
 	const promoImageUploadPreview = document.getElementById("promo_image_preview");
 	const uploadedImages = document.querySelectorAll(".uploadedImages");
-	const datepickers = document.querySelectorAll(".datepicker-input");
+	const datepickers = document.querySelectorAll(".datepicker-inputs");
 	const removeFileUpload = document.getElementById("remove-file-upload");
 	const promotionsListTable = document.getElementById("promotions-list-table");
 
@@ -28,6 +28,8 @@ document.addEventListener("DOMContentLoaded", function () {
 				"Декември",
 			],
 			monthsShort: ["Ян", "Фев", "Мар", "Апр", "Май", "Юни", "Юли", "Авг", "Сеп", "Окт", "Ное", "Дек"],
+			today: "Днес",
+			clear: "Изчисти",
 		};
 	})();
 
@@ -37,6 +39,8 @@ document.addEventListener("DOMContentLoaded", function () {
 			daysOfWeekHighlighted: [6, 0],
 			autohide: true,
 			weekStart: 1,
+			todayButton: true,
+			clearButton: true,
 			language: "bg",
 		});
 	});

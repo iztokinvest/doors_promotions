@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.18.2
+Version: 1.18.3
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -537,8 +537,8 @@ function promotions_settings_page()
 				<tr>
 					<th scope="row">Начална и крайна дата</th>
 					<td>
-						<input required type="text" class="form-control datepicker-input d-inline" name="promo_start_date" id="promo_start_date" />
-						<input required type="text" class="form-control datepicker-input d-inline" name="promo_end_date" id="promo_end_date" />
+						<input required type="text" class="form-control datepicker-inputs d-inline" name="promo_start_date" id="promo_start_date" />
+						<input required type="text" class="form-control datepicker-inputs d-inline" name="promo_end_date" id="promo_end_date" />
 					</td>
 				</tr>
 				<tr>
@@ -657,8 +657,8 @@ function promotions_list_page()
 						</td>
 						<td><textarea class="form-control promo-title"><?php echo esc_html($row->title); ?></textarea></td>
 						<td><?php echo $show_image; ?></td>
-						<td><input type="text" class="form-control datepicker-input promo-start-date" value="<?php echo date('d/m/Y', strtotime($row->start_date)); ?>" /></td>
-						<td><input type="text" class="form-control datepicker-input promo-end-date" value="<?php echo date('d/m/Y', strtotime($row->end_date)); ?>" /></td>
+						<td><input type="text" class="form-control datepicker-inputs promo-start-date" value="<?php echo date('d/m/Y', strtotime($row->start_date)); ?>" /></td>
+						<td><input type="text" class="form-control datepicker-inputs promo-end-date" value="<?php echo date('d/m/Y', strtotime($row->end_date)); ?>" /></td>
 						<td><input type="checkbox" class="promo-active" <?php echo ($row->active) ? 'checked' : ''; ?> /></td>
 						<td>
 							<button type="button" class="btn btn-primary edit-promo" data-id="<?php echo esc_attr($row->id); ?>">Редактирай</button>
