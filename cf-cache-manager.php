@@ -18,8 +18,6 @@ function cf_cache_manager_admin_bar($wp_admin_bar)
 	$api_token = get_option('cf_api_token');
 	$domain = get_option('cf_domain', parse_url(get_site_url(), PHP_URL_HOST));
 	$zone_id = get_zone_id_from_domain($api_token, $domain);
-	$dev_mode_active = get_option('cf_dev_mode_active', 0);
-	$dev_mode_end_time = get_option('cf_dev_mode_end_time', 0);
 	$current_time = time();
 
 	if ($api_token && $zone_id) {
@@ -45,31 +43,33 @@ function cf_cache_manager_admin_bar($wp_admin_bar)
 			'href' => add_query_arg(['cf_action' => 'dev_mode'], admin_url('tools.php?page=cf-cache-manager')),
 		];
 
-		if ($dev_mode_active && $current_time < $dev_mode_end_time) {
-			$remaining_seconds = $dev_mode_end_time - $current_time;
+		// Проверка на статуса на Development Mode директно от Cloudflare
+		$dev_mode_status = cf_get_development_mode_status($zone_id, $api_token);
+		if ($dev_mode_status && $dev_mode_status['value'] === 'on' && isset($dev_mode_status['time_remaining'])) {
+			$remaining_seconds = $dev_mode_status['time_remaining'];
 			$hours = floor($remaining_seconds / 3600);
 			$minutes = floor(($remaining_seconds % 3600) / 60);
 			$seconds = $remaining_seconds % 60;
 			$initial_time = sprintf('%d:%02d:%02d', $hours, $minutes, $seconds);
 			$dev_mode_node['meta'] = [
-				'html' => '<div style="text-align:center"><span id="cf-dev-mode-timer" style="color: #ffc107;">Без кеш още: <span id="cf-remaining-time">' . $initial_time . '</span></span></div>' .
+				'html' => '<span id="cf-dev-mode-timer" style="font-size: 0.8em; color: green;">Без кеш още: <span id="cf-remaining-time">' . $initial_time . '</span></span>' .
 					'<script type="text/javascript">
-								var cf_endTime = ' . $dev_mode_end_time . ' * 1000;
-								var cf_timer = setInterval(function() {
-									var now = new Date().getTime();
-									var distance = cf_endTime - now;
-									if (distance < 0) {
-										clearInterval(cf_timer);
-										document.getElementById("cf-remaining-time").innerHTML = "0:00:00";
-										window.location.reload();
-									} else {
-										var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-										var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-										var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-										document.getElementById("cf-remaining-time").innerHTML = hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-									}
-								}, 1000);
-							</script>',
+							  var cf_endTime = ' . ($current_time + $remaining_seconds) . ' * 1000;
+							  var cf_timer = setInterval(function() {
+								  var now = new Date().getTime();
+								  var distance = cf_endTime - now;
+								  if (distance < 0) {
+									  clearInterval(cf_timer);
+									  document.getElementById("cf-remaining-time").innerHTML = "0:00:00";
+									  window.location.reload();
+								  } else {
+									  var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+									  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+									  var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+									  document.getElementById("cf-remaining-time").innerHTML = hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+								  }
+							  }, 1000);
+						  </script>',
 			];
 		}
 
@@ -89,17 +89,19 @@ function cf_cache_manager_page()
 		update_option('cf_domain', sanitize_text_field($_POST['cf_domain']));
 	}
 
+	// Извличане на zone_id
+	$api_token = get_option('cf_api_token');
+	$domain = get_option('cf_domain', parse_url(get_site_url(), PHP_URL_HOST));
+	$zone_id = get_zone_id_from_domain($api_token, $domain);
+
+	$last_purge_all_time = get_option('last_purge_all_time', 0);
+
 	// Обработка на действия от администраторската лента чрез GET
 	$redirect_url = '';
 	if (isset($_GET['cf_action']) && current_user_can('manage_options')) {
-		$api_token = get_option('cf_api_token');
-		$domain = get_option('cf_domain', parse_url(get_site_url(), PHP_URL_HOST));
-		$zone_id = get_zone_id_from_domain($api_token, $domain);
 		$current_time = time();
 		$cooldown_period = 15 * 60; // 15 минути за Purge All
 		$dev_mode_duration = 3 * 60 * 60; // 3 часа за Development Mode
-		$dev_mode_active = get_option('cf_dev_mode_active', 0);
-		$dev_mode_end_time = get_option('cf_dev_mode_end_time', 0);
 		$last_purge_all_time = get_option('last_purge_all_time', 0);
 
 		if ($api_token && $zone_id) {
@@ -119,6 +121,10 @@ function cf_cache_manager_page()
 			if ($zone_info && !empty($zone_info['name']) && strpos($url, $zone_info['name']) === false) {
 				echo '<div class="error"><p>Грешка: URLът "' . esc_url($url) . '" не е свързан с домейна "' . esc_html($zone_info['name']) . '" в този Zone ID.</p></div>';
 			} else {
+				// Проверка на статуса на Development Mode директно от Cloudflare
+				$dev_mode_status = cf_get_development_mode_status($zone_id, $api_token);
+				$dev_mode_active = ($dev_mode_status && $dev_mode_status['value'] === 'on' && isset($dev_mode_status['time_remaining']) && $dev_mode_status['time_remaining'] > 0);
+
 				switch ($action) {
 					case 'purge':
 						$result = cf_purge_cache($zone_id, $api_token, ['files' => [$url]]);
@@ -132,7 +138,7 @@ function cf_cache_manager_page()
 
 					case 'dev_mode':
 						// Първо изпълни Purge All
-						if ($dev_mode_active && $current_time < $dev_mode_end_time) {
+						if ($dev_mode_active) {
 							echo '<div class="error"><p>Purge All е забранен, докато Development Mode е активен!</p></div>';
 						} elseif ($current_time - $last_purge_all_time < $cooldown_period) {
 							$time_left = $cooldown_period - ($current_time - $last_purge_all_time);
@@ -151,8 +157,6 @@ function cf_cache_manager_page()
 						// Активирай Development Mode
 						$result = cf_set_development_mode($zone_id, $api_token, 'on');
 						if (!is_wp_error($result) && $result === true) {
-							update_option('cf_dev_mode_active', 1);
-							update_option('cf_dev_mode_end_time', $current_time + $dev_mode_duration);
 							echo '<div class="updated"><p>Development Mode е активиран за 3 часа. Purge All е забранен!</p></div>';
 						} else {
 							$error_msg = is_wp_error($result) ? $result->get_error_message() : 'Неуспешна активация на Development Mode.';
@@ -168,19 +172,14 @@ function cf_cache_manager_page()
 		}
 	}
 
-	// Извличане на zone_id
-	$api_token = get_option('cf_api_token');
-	$domain = get_option('cf_domain', parse_url(get_site_url(), PHP_URL_HOST));
-	$zone_id = get_zone_id_from_domain($api_token, $domain);
-
-	$dev_mode_active = get_option('cf_dev_mode_active', 0);
-	$dev_mode_end_time = get_option('cf_dev_mode_end_time', 0);
-	$last_purge_all_time = get_option('last_purge_all_time', 0);
-
 	if (isset($_POST['action']) && $api_token && $zone_id && current_user_can('manage_options')) {
 		$current_time = time();
 		$cooldown_period = 15 * 60; // 15 минути за Purge All
 		$dev_mode_duration = 3 * 60 * 60; // 3 часа за Development Mode
+
+		// Проверка на статуса на Development Mode директно от Cloudflare
+		$dev_mode_status = cf_get_development_mode_status($zone_id, $api_token);
+		$dev_mode_active = ($dev_mode_status && $dev_mode_status['value'] === 'on' && isset($dev_mode_status['time_remaining']) && $dev_mode_status['time_remaining'] > 0);
 
 		switch ($_POST['action']) {
 			case 'purge':
@@ -195,7 +194,7 @@ function cf_cache_manager_page()
 
 			case 'dev_mode':
 				// Първо изпълни Purge All
-				if ($dev_mode_active && $current_time < $dev_mode_end_time) {
+				if ($dev_mode_active) {
 					echo '<div class="error"><p>Purge All е забранен, докато Development Mode е активен!</p></div>';
 				} elseif ($current_time - $last_purge_all_time < $cooldown_period) {
 					$time_left = $cooldown_period - ($current_time - $last_purge_all_time);
@@ -214,8 +213,6 @@ function cf_cache_manager_page()
 				// Активирай Development Mode
 				$result = cf_set_development_mode($zone_id, $api_token, 'on');
 				if (!is_wp_error($result) && $result === true) {
-					update_option('cf_dev_mode_active', 1);
-					update_option('cf_dev_mode_end_time', $current_time + $dev_mode_duration);
 					echo '<div class="updated"><p>Development Mode е активиран за 3 часа. Purge All е забранен!</p></div>';
 				} else {
 					$error_msg = is_wp_error($result) ? $result->get_error_message() : 'Неуспешна активация на Development Mode.';
@@ -225,12 +222,15 @@ function cf_cache_manager_page()
 		}
 	}
 
-	// Проверка дали Development Mode е изтекъл
-	if ($dev_mode_active && $current_time > $dev_mode_end_time) {
+	// Проверка дали Development Mode е активен директно от Cloudflare за страницата
+	$dev_mode_status = cf_get_development_mode_status($zone_id, $api_token);
+	$dev_mode_active = ($dev_mode_status && $dev_mode_status['value'] === 'on' && isset($dev_mode_status['time_remaining']) && $dev_mode_status['time_remaining'] > 0);
+	$dev_mode_end_time = $current_time + ($dev_mode_status['time_remaining'] ?? 0);
+
+	// Ако Dev Mode е изтекъл, деактивирай го (но Cloudflare го деактивира автоматично, така че това може да не е нужно, но за сигурност)
+	if ($dev_mode_status && $dev_mode_status['value'] === 'on' && ($dev_mode_status['time_remaining'] ?? 0) <= 0) {
 		$result = cf_set_development_mode($zone_id, $api_token, 'off');
 		if (!is_wp_error($result) && $result === true) {
-			update_option('cf_dev_mode_active', 0);
-			update_option('cf_dev_mode_end_time', 0);
 			echo '<div class="updated"><p>Development Mode е изтекъл и е деактивиран.</p></div>';
 		}
 	}
@@ -256,7 +256,7 @@ function cf_cache_manager_page()
 				<input type="hidden" name="action" value="dev_mode">
 				<input type="submit" class="button" value="Премахни целия кеш за 3 часа">
 			</form>
-			<?php if ($dev_mode_active && $current_time < $dev_mode_end_time): ?>
+			<?php if ($dev_mode_active): ?>
 				<div id="dev-mode-counter" style="margin-top: 20px; font-size: 16px; color: #0066cc;">Оставащо време без кеш: <span id="remaining-time"></span></div>
 				<script type="text/javascript">
 					var endTime = <?php echo $dev_mode_end_time; ?> * 1000; // Конвертиране в милисекунди
@@ -301,6 +301,31 @@ function cf_cache_manager_page()
 		<?php endif; ?>
 	</div>
 <?php
+}
+
+// Функция за извличане на статуса на Development Mode
+function cf_get_development_mode_status($zone_id, $api_token)
+{
+	$api_url = "https://api.cloudflare.com/client/v4/zones/{$zone_id}/settings/development_mode";
+	$args = [
+		'headers' => [
+			'Authorization' => "Bearer {$api_token}",
+			'Content-Type' => 'application/json',
+		],
+		'method' => 'GET',
+		'timeout' => 30,
+	];
+
+	$response = wp_remote_request($api_url, $args);
+	if (is_wp_error($response)) {
+		return false;
+	}
+
+	$body = json_decode(wp_remote_retrieve_body($response), true);
+	if ($body['success'] && !empty($body['result'])) {
+		return $body['result'];
+	}
+	return false;
 }
 
 // Нова функция за извличане на информация за Zone
