@@ -52,7 +52,7 @@ function cf_cache_manager_admin_bar($wp_admin_bar)
 			$seconds = $remaining_seconds % 60;
 			$initial_time = sprintf('%d:%02d:%02d', $hours, $minutes, $seconds);
 			$dev_mode_node['meta'] = [
-				'html' => '<span id="cf-dev-mode-timer" style="font-size: 0.8em; color: green;">Без кеш още: <span id="cf-remaining-time">' . $initial_time . '</span></span>' .
+				'html' => '<div style="text-align:center"><span id="cf-dev-mode-timer" style="color: #ffc107;">Без кеш още: <span id="cf-remaining-time">' . $initial_time . '</span></span></div>' .
 					'<script type="text/javascript">
 							  var cf_endTime = ' . ($current_time + $remaining_seconds) . ' * 1000;
 							  var cf_timer = setInterval(function() {
