@@ -21,10 +21,25 @@ function cf_cache_manager_admin_bar($wp_admin_bar)
 	$current_time = time();
 
 	if ($api_token && $zone_id) {
+		$dev_mode_status = cf_get_development_mode_status($zone_id, $api_token);
 		$current_url = (is_admin() ? admin_url() : home_url(add_query_arg(null, null)));
+		$icon_color = $dev_mode_status && $dev_mode_status['value'] === 'on' ? '#ffffff' : '#f38020';
+		$content_icon = '
+        <svg xmlns="http://www.w3.org/2000/svg" aria-label="Cloudflare" role="img" width="20" height="20" viewBox="0 0 20 20" style="vertical-align: middle; margin-top: -2px;">
+            <rect width="20" height="20" rx="15%" fill="#ffffff"/>
+            <path fill="' . $icon_color . '" d="M13.24 12.84c0.44-1.04-0.16-1.52-0.76-1.52l-5.92-0.08c-0.16 0-0.16-0.24 0.04-0.28l6-0.08c0.68-0.04 1.48-0.6 1.72-1.32 0 0 0.4-0.84 0.36-0.96a3.88 3.88 0 0 0-7.48-0.44c-1.52-1-3.12 0.36-2.76 1.84-1.92 0.12-2.6 1.84-2.4 2.88 0 0.04 0.04 0.08 0.12 0.08h10.96c0.04 0 0.12-0.04 0.12-0.12z"/>
+            <path fill="' . $icon_color . '" d="M15.24 8.96c-0.16 0-0.24-0.04-0.28 0.04l-0.2 0.84c-0.2 0.64 0.12 1.2 0.8 1.24l1.28 0.08c0.16 0 0.16 0.24-0.04 0.28l-1.32 0.04c-1.44 0.16-1.84 1.56-1.84 1.56 0 0.08 0 0.12 0.08 0.12h4.52l0.12-0.08a3.24 3.24 0 0 0-3.12-4.12"/>
+        </svg>';
+
+		// Добавяне на прогрес линията, ако Dev Mode е активен
+		$progress_line = '';
+		if ($dev_mode_status && $dev_mode_status['value'] === 'on' && isset($dev_mode_status['time_remaining'])) {
+			$progress_line = '<div id="cf-progress-line" style="position: absolute; bottom: 0; left: 0; width: 0%; height: 2px; background-color: #f38020;"></div>';
+		}
+
 		$args = [
 			'id' => 'cf-cache-manager',
-			'title' => 'Cloudflare Cache',
+			'title' => "<span class='ab-icon' style='position: relative;'>$content_icon</span> <span class='ab-label' style='color: $icon_color;'>Cloudflare Cache</span><div>$progress_line</div>",
 			'href' => admin_url('tools.php?page=cf-cache-manager'),
 		];
 		$wp_admin_bar->add_node($args);
@@ -39,12 +54,11 @@ function cf_cache_manager_admin_bar($wp_admin_bar)
 		$dev_mode_node = [
 			'id' => 'cf-cache-dev-mode',
 			'parent' => 'cf-cache-manager',
-			'title' => 'Премахни целия кеш за 3 часа',
+			'title' => $dev_mode_status['value'] === 'on' ? 'Удължи времето без кеш до 3 часа' : 'Премахни целия кеш за период от 3 часа',
 			'href' => add_query_arg(['cf_action' => 'dev_mode'], admin_url('tools.php?page=cf-cache-manager')),
 		];
+		$wp_admin_bar->add_node($dev_mode_node);
 
-		// Проверка на статуса на Development Mode директно от Cloudflare
-		$dev_mode_status = cf_get_development_mode_status($zone_id, $api_token);
 		if ($dev_mode_status && $dev_mode_status['value'] === 'on' && isset($dev_mode_status['time_remaining'])) {
 			$remaining_seconds = $dev_mode_status['time_remaining'];
 			$hours = floor($remaining_seconds / 3600);
@@ -52,24 +66,35 @@ function cf_cache_manager_admin_bar($wp_admin_bar)
 			$seconds = $remaining_seconds % 60;
 			$initial_time = sprintf('%d:%02d:%02d', $hours, $minutes, $seconds);
 			$dev_mode_node['meta'] = [
-				'html' => '<div style="text-align:center"><span id="cf-dev-mode-timer" style="color: #ffc107;">Без кеш още: <span id="cf-remaining-time">' . $initial_time . '</span></span></div>' .
+				'html' => '<div style="text-align:center; position: relative; margin: 10px; width: 300px;">
+                <div style="width: 100%; background-color: #e0e0e0; height: 20px; border-radius: 5px; overflow: hidden;">
+                    <div id="cf-progress-fill" style="width: 100%; height: 100%; background-color: #f38020; transition: width 1s linear; text-align: center; color: white; line-height: 20px;"></div>
+                </div>
+                <div id="cf-remaining-time" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold; color: #0f2b46;"></div>
+            </div>' .
 					'<script type="text/javascript">
-							  var cf_endTime = ' . ($current_time + $remaining_seconds) . ' * 1000;
-							  var cf_timer = setInterval(function() {
-								  var now = new Date().getTime();
-								  var distance = cf_endTime - now;
-								  if (distance < 0) {
-									  clearInterval(cf_timer);
-									  document.getElementById("cf-remaining-time").innerHTML = "0:00:00";
-									  window.location.reload();
-								  } else {
-									  var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-									  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-									  var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-									  document.getElementById("cf-remaining-time").innerHTML = hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-								  }
-							  }, 1000);
-						  </script>',
+                var cf_endTime = ' . ($current_time + $remaining_seconds) . ' * 1000;
+                var totalDuration = 3 * 60 * 60 * 1000; // Общо време (3 часа в милисекунди)
+                var cf_timer = setInterval(function() {
+                    var now = new Date().getTime();
+                    var distance = cf_endTime - now;
+                    if (distance < 0) {
+                        clearInterval(cf_timer);
+                        document.getElementById("cf-remaining-time").innerHTML = "0:00:00";
+                        document.getElementById("cf-progress-fill").style.width = "0%";
+                        document.getElementById("cf-progress-line").style.width = "0%";
+                        window.location.reload();
+                    } else {
+                        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                        var progress = (distance / totalDuration) * 100; // Изчисляване на прогреса в проценти
+                        document.getElementById("cf-remaining-time").innerHTML = "Без кеш още: " + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+                        document.getElementById("cf-progress-fill").style.width = progress + "%";
+                        document.getElementById("cf-progress-line").style.width = progress + "%";
+                    }
+                }, 1000);
+            </script>',
 			];
 		}
 
@@ -240,7 +265,7 @@ function cf_cache_manager_page()
 		<h1>Cloudflare Cache Manager</h1>
 		<form method="post" style="margin-bottom: 20px;">
 			<label for="cf_token">Cloudflare API Token:</label><br>
-			<input type="password" name="cf_token" id="cf_token" value="<?php echo esc_attr(get_option('cf_api_token') ? str_repeat('*', 32) : ''); ?>" style="width: 300px;" readonly>
+			<input type="password" name="cf_token" id="cf_token" value="<?php echo esc_attr(get_option('cf_api_token') ? str_repeat('*', 32) : ''); ?>" style="width: 300px;">
 			<br><br>
 			<label for="cf_domain">Домейн:</label><br>
 			<input type="text" name="cf_domain" id="cf_domain" value="<?php echo esc_attr(get_option('cf_domain', parse_url(get_site_url(), PHP_URL_HOST))); ?>" style="width: 300px;">
@@ -254,24 +279,33 @@ function cf_cache_manager_page()
 			</form>
 			<form method="post">
 				<input type="hidden" name="action" value="dev_mode">
-				<input type="submit" class="button" value="Премахни целия кеш за 3 часа">
+				<input type="submit" class="button" value="<?php echo ($dev_mode_active ? 'Удължи времето без кеш до 3 часа' : 'Премахни целия кеш за период от 3 часа') ?> ">
 			</form>
 			<?php if ($dev_mode_active): ?>
-				<div id="dev-mode-counter" style="margin-top: 20px; font-size: 16px; color: #0066cc;">Оставащо време без кеш: <span id="remaining-time"></span></div>
+				<div id="dev-mode-progress-container" style="margin-top: 20px; font-size: 16px; color: #0066cc; position: relative;">
+					<div id="dev-mode-progress-bar" style="width: 100%; background-color: #e0e0e0; height: 20px; border-radius: 5px; overflow: hidden;">
+						<div id="progress-fill" style="width: 100%; height: 100%; background-color: #f38020; transition: width 1s linear; text-align: center; color: white; line-height: 20px;"></div>
+					</div>
+					<div id="remaining-time" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; font-weight: bold; color: #0f2b46;"></div>
+				</div>
 				<script type="text/javascript">
 					var endTime = <?php echo $dev_mode_end_time; ?> * 1000; // Конвертиране в милисекунди
+					var totalDuration = 3 * 60 * 60 * 1000; // Общо време (3 часа в милисекунди)
 					var timer = setInterval(function() {
 						var now = new Date().getTime();
 						var distance = endTime - now;
 						if (distance < 0) {
 							clearInterval(timer);
 							document.getElementById('remaining-time').innerHTML = '0:00:00';
+							document.getElementById('progress-fill').style.width = '0%';
 							window.location.reload(); // Презареди страницата, за да деактивира Dev Mode
 						} else {
 							var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 							var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
 							var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-							document.getElementById('remaining-time').innerHTML = hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+							var progress = (distance / totalDuration) * 100; // Изчисляване на прогреса в проценти
+							document.getElementById('remaining-time').innerHTML = "Без кеш още: " + (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+							document.getElementById('progress-fill').style.width = progress + '%';
 						}
 					}, 1000);
 				</script>
