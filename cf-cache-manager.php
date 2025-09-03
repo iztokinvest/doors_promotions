@@ -136,7 +136,7 @@ function cf_cache_manager_page()
 
 			// Проверка дали домейнът е локален
 			$parsed_url = parse_url($url);
-			$host = $parsed_url['host'] ?? '';
+			$host = isset($parsed_url['host']) ? $parsed_url['host'] : '';
 			if (preg_match('/\.(test|local|dev)$/', $host)) {
 				echo '<div class="error"><p>Предупреждение: Домейнът "' . esc_html($host) . '" изглежда локален и може да не е конфигуриран в Cloudflare. Действието може да не се изпълни.</p></div>';
 			}
@@ -250,10 +250,10 @@ function cf_cache_manager_page()
 	// Проверка дали Development Mode е активен директно от Cloudflare за страницата
 	$dev_mode_status = cf_get_development_mode_status($zone_id, $api_token);
 	$dev_mode_active = ($dev_mode_status && $dev_mode_status['value'] === 'on' && isset($dev_mode_status['time_remaining']) && $dev_mode_status['time_remaining'] > 0);
-	$dev_mode_end_time = $current_time + ($dev_mode_status['time_remaining'] ?? 0);
+	$dev_mode_end_time = $current_time + (isset($dev_mode_status['time_remaining']) ? $dev_mode_status['time_remaining'] : 0);
 
 	// Ако Dev Mode е изтекъл, деактивирай го (но Cloudflare го деактивира автоматично, така че това може да не е нужно, но за сигурност)
-	if ($dev_mode_status && $dev_mode_status['value'] === 'on' && ($dev_mode_status['time_remaining'] ?? 0) <= 0) {
+	if ($dev_mode_status && $dev_mode_status['value'] === 'on' && (isset($dev_mode_status['time_remaining']) ? $dev_mode_status['time_remaining'] : 0) <= 0) {
 		$result = cf_set_development_mode($zone_id, $api_token, 'off');
 		if (!is_wp_error($result) && $result === true) {
 			echo '<div class="updated"><p>Development Mode е изтекъл и е деактивиран.</p></div>';
@@ -439,7 +439,7 @@ function cf_purge_cache($zone_id, $api_token, $data)
 		}
 		return true;
 	}
-	return new WP_Error('api_error', $body['errors'][0]['message'] ?? 'Неизвестна грешка при почистване на кеша.');
+	return new WP_Error('api_error', isset($body['errors'][0]['message']) ? $body['errors'][0]['message'] : 'Неизвестна грешка при почистване на кеша.');
 }
 
 // Функция за активиране/деактивиране на Development Mode
@@ -468,6 +468,6 @@ function cf_set_development_mode($zone_id, $api_token, $value)
 		}
 		return true;
 	}
-	return new WP_Error('api_error', $body['errors'][0]['message'] ?? 'Неизвестна грешка при настройка на Development Mode.');
+	return new WP_Error('api_error', isset($body['errors'][0]['message']) ? $body['errors'][0]['message'] : 'Неизвестна грешка при настройка на Development Mode.');
 }
 ?>
