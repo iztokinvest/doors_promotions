@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.20.0
+Version: 1.20.1
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -1322,12 +1322,18 @@ add_action('wp_ajax_submit_promo', function() {
     ];
     // Handle image upload
     if (!empty($_FILES['promo_image']['name'])) {
-        require_once(ABSPATH . 'wp-admin/includes/file.php');
-        $uploaded = media_handle_upload('promo_image', 0);
-        if (is_wp_error($uploaded)) {
+        $upload_dir = wp_upload_dir();
+        $custom_dir = $upload_dir['basedir'] . '/doors_promotions/';
+        if (!file_exists($custom_dir)) {
+            wp_mkdir_p($custom_dir);
+        }
+        $filename = sanitize_file_name($_FILES['promo_image']['name']);
+        $target_file = $custom_dir . $filename;
+        if (move_uploaded_file($_FILES['promo_image']['tmp_name'], $target_file)) {
+            $fields['image'] = $upload_dir['baseurl'] . '/doors_promotions/' . $filename;
+        } else {
             wp_send_json_error(['message' => 'Грешка при качване на изображението.']);
         }
-        $fields['image'] = wp_get_attachment_url($uploaded);
     } else {
         $fields['image'] = '';
     }
