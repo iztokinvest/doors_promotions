@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.19.4
+Version: 1.20.0
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -597,6 +597,7 @@ function promotions_list_page()
 		<table id="promotions-list-table" class="table">
 			<thead>
 				<tr>
+					<th><input type="checkbox" id="select-all-promos"></th>
 					<th>ID</th>
 					<th>Категория</th>
 					<th>Позиция</th>
@@ -641,6 +642,7 @@ function promotions_list_page()
 					}
 					?>
 					<tr <?php echo $row_color; ?>>
+						<td><input type="checkbox" class="select-promo" value="<?php echo $row->id; ?>"></td>
 						<td><?php echo $rows_count[$row_status]; ?></td>
 						<td><?php echo $row->category ? get_term($row->category)->name : ''; ?></td>
 						<td>
@@ -683,10 +685,11 @@ function promotions_list_page()
 			<input type="hidden" name="action" value="activate_all">
 			<button type="submit" class="btn btn-success">Активирай неактивните</button>
 		</form>
-		<form class="d-inline" method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+		<form class="d-inline delete-expired-form" method="post" action="<?php echo admin_url('admin-post.php'); ?>">
 			<input type="hidden" name="action" value="delete_expired">
 			<button type="submit" class="btn btn-danger">Изтрий приключените</button>
 		</form>
+		<button type="button" class="btn btn-danger" id="bulk-delete-promos" style="display: none;">Изтрий маркираните</button>
 	</div>
 <?php
 	echo "<hr><div class='float-end me-5'>Версия на разширението: <span id='promo-extension-version'>" . promoPluginData()['Version'] . '</span></div>';
@@ -1274,3 +1277,61 @@ add_action('admin_post_update_template', 'handle_update_template');
 add_action('admin_post_delete_template', 'handle_delete_template');
 
 include_once(plugin_dir_path(__FILE__) . 'cf-cache-manager.php');
+
+add_action('wp_ajax_bulk_delete_promos', function() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['message' => 'Недостатъчни права.']);
+    }
+    $ids = isset($_POST['ids']) ? array_map('intval', $_POST['ids']) : [];
+    if (empty($ids)) {
+        wp_send_json_error(['message' => 'Няма избрани банери.']);
+    }
+    global $wpdb;
+    $table = $wpdb->prefix . 'doors_promotions';
+    foreach ($ids as $id) {
+        $promo = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $id));
+        if ($promo) {
+            $image_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE image = %s", $promo->image));
+            $wpdb->delete($table, ['id' => $id]);
+            if ($image_count == 1) {
+                $image_path = str_replace(site_url(), ABSPATH, $promo->image);
+                if (file_exists($image_path)) {
+                    unlink($image_path);
+                }
+            }
+        }
+    }
+    clear_cache();
+    wp_send_json_success(['message' => 'Избраните банери са изтрити.']);
+});
+
+add_action('wp_ajax_submit_promo', function() {
+    // Same logic as handle_promotions_form, but for AJAX
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['message' => 'Недостатъчни права.']);
+    }
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'doors_promotions';
+    $fields = [
+        'shortcode' => sanitize_text_field($_POST['promo_shortcode'] ?? ''),
+        'title' => sanitize_text_field($_POST['promo_title'] ?? ''),
+        'start_date' => date('Y-m-d', strtotime(str_replace('/', '-', $_POST['promo_start_date']))),
+        'end_date' => date('Y-m-d', strtotime(str_replace('/', '-', $_POST['promo_end_date']))),
+        'active' => !empty($_POST['active_banner']) ? 1 : 0,
+        'category' => isset($_POST['promo_categories']) && is_array($_POST['promo_categories']) ? intval($_POST['promo_categories'][0]) : null,
+    ];
+    // Handle image upload
+    if (!empty($_FILES['promo_image']['name'])) {
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        $uploaded = media_handle_upload('promo_image', 0);
+        if (is_wp_error($uploaded)) {
+            wp_send_json_error(['message' => 'Грешка при качване на изображението.']);
+        }
+        $fields['image'] = wp_get_attachment_url($uploaded);
+    } else {
+        $fields['image'] = '';
+    }
+    $wpdb->insert($table_name, $fields);
+    clear_cache();
+    wp_send_json_success(['message' => 'Банерът е добавен успешно.']);
+});

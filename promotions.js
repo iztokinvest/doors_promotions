@@ -196,6 +196,11 @@ const notifier = new AWN({
 		global: 5000,
 		position: "bottom-right",
 	},
+	labels: {
+		confirm: 'Потвърдете',
+		confirmOk: 'Да',
+		confirmCancel: 'Не'
+	}
 });
 
 hash = window.location.hash;
@@ -287,29 +292,192 @@ jQuery(document).ready(function ($) {
 				}
 			},
 			error: function () {
-				frame_notifier.alert(`Грешка при редактиране на банер.`);
+				notifier.alert(`Грешка при редактиране на банер.`);
 			},
 		});
 	});
 
 	$(".delete-promo").click(function () {
 		const $this = $(this);
+		notifier.confirm(
+			"Сигурни ли сте, че искате да изтриете този банер?",
+			function () {
+				// On confirm
+				$.ajax({
+					url: ajaxurl,
+					method: "POST",
+					data: {
+						action: "delete_promo",
+						promo_id: $this.data("id"),
+					},
+					success: (response) => {
+						if (response.success) {
+							$this.closest("tr").remove();
+							notifier.success("Банерът е изтрит.");
+						}
+					},
+					error: function () {
+						notifier.alert(`Грешка при изтриване на банер.`);
+					},
+				});
+			},
+			function () {
+				// On cancel
+				notifier.info("Изтриването е отказано.");
+			}
+		);
+	});
+
+	// Bulk delete selected promos
+	$("#select-all-promos").on("change", function () {
+		$(".select-promo").prop("checked", this.checked);
+	});
+
+	$("#bulk-delete-promos").click(function () {
+		var selected = $(".select-promo:checked")
+			.map(function () {
+				return $(this).val();
+			})
+			.get();
+		if (selected.length === 0) {
+			notifier.info("Няма избрани банери.");
+			return;
+		}
+		notifier.confirm(
+			"Сигурни ли сте, че искате да изтриете избраните банери?",
+			function () {
+				$.ajax({
+					url: ajaxurl,
+					method: "POST",
+					data: {
+						action: "bulk_delete_promos",
+						ids: selected,
+					},
+					success: function (response) {
+						if (response.success) {
+							selected.forEach(function (id) {
+								$(".select-promo[value='" + id + "']")
+									.closest("tr")
+									.remove();
+							});
+							notifier.success(response.data.message || "Избраните банери са изтрити.");
+						} else {
+							notifier.alert(response.data.message || "Грешка при изтриване.");
+						}
+					},
+					error: function () {
+						notifier.alert("Грешка при изтриване на избрани банери.");
+					},
+				});
+			},
+			function () {
+				notifier.info("Груповото изтриване е отказано.");
+			}
+		);
+	});
+
+	// Toggle delete buttons based on checked checkboxes
+	function toggleDeleteButtons() {
+		var anyChecked = $('.select-promo:checked').length > 0;
+		if (anyChecked) {
+			$('#bulk-delete-promos').show();
+			$('button:contains("Изтрий приключените")').hide();
+		} else {
+			$('#bulk-delete-promos').hide();
+			$('button:contains("Изтрий приключените")').show();
+		}
+	}
+
+	// On checkbox change
+	$(document).on('change', '.select-promo, #select-all-promos', toggleDeleteButtons);
+
+	// Initial check
+	toggleDeleteButtons();
+
+	// AJAX add promo form logic moved from inline script to JS file
+	var lastPromoData = {};
+	$("form.bootstrap-form").on("submit", function (e) {
+		e.preventDefault();
+		var form = this;
+		var formData = new FormData(form);
+		var $form = $(form);
+		var submitBtn = $form.find('button[type="submit"]');
+		submitBtn.prop('disabled', true);
 		$.ajax({
 			url: ajaxurl,
-			method: "POST",
-			data: {
-				action: "delete_promo",
-				promo_id: $this.data("id"),
-			},
-			success: (response) => {
+			type: "POST",
+			data: formData,
+			processData: false,
+			contentType: false,
+			success: function (response) {
+				submitBtn.prop('disabled', false);
 				if (response.success) {
-					$this.closest("tr").remove();
-					notifier.success("Банерът е изтрит.");
+					// Save last data except image
+					lastPromoData = {};
+					$form.serializeArray().forEach(function (item) {
+						if (item.name !== 'promo_image') {
+							if (item.name === 'promo_categories[]') {
+								if (!lastPromoData[item.name]) lastPromoData[item.name] = [];
+								lastPromoData[item.name].push(item.value);
+							} else {
+								lastPromoData[item.name] = item.value;
+							}
+						}
+					});
+					lastPromoData['active_banner'] = $form.find('#active_banner').prop('checked');
+					// Ask for similar banner
+					notifier.confirm(
+						'Банерът е добавен. Искате ли да качите друг подобен банер?',
+						function () {
+							// Reset only image, keep other fields
+							$form[0].reset();
+							Object.keys(lastPromoData).forEach(function (key) {
+								if (key === 'active_banner') {
+									$form.find('#active_banner').prop('checked', lastPromoData[key]);
+								} else if (key === 'promo_categories[]') {
+									$form.find('input[name="promo_categories[]"]').prop('checked', false);
+									lastPromoData[key].forEach(function (val) {
+										$form.find('input[name="promo_categories[]"][value="' + val + '"]').prop('checked', true);
+									});
+								} else {
+									$form.find('[name="' + key + '"]').val(lastPromoData[key]);
+								}
+							});
+							$form.find('#promo_image_preview').hide();
+						},
+						function () {
+							$form[0].reset();
+							$form.find('#promo_image_preview').hide();
+							// Redirect to promotions page with filter from selected shortcode
+							var selectedShortcode = lastPromoData['promo_shortcode'];
+							var filter = '';
+							if (selectedShortcode && selectedShortcode.includes('worktime')) {
+								filter = 'worktime';
+							} else if (selectedShortcode && selectedShortcode.includes('text')) {
+								filter = 'text';
+							} else if (selectedShortcode && selectedShortcode.includes('price')) {
+								filter = 'price';
+							} else if (selectedShortcode && selectedShortcode.includes('other')) {
+								filter = 'other';
+							} else if (selectedShortcode && selectedShortcode.includes('css')) {
+								filter = 'css';
+							}
+							if (filter) {
+								window.location.href = 'admin.php?page=promotions&filter=' + filter;
+							} else {
+								window.location.href = 'admin.php?page=promotions';
+							}
+						}
+					);
+					notifier.success('Банерът е добавен успешно.');
+				} else {
+					notifier.alert(response.data && response.data.message ? response.data.message : 'Грешка при добавяне на банер.');
 				}
 			},
 			error: function () {
-				frame_notifier.alert(`Грешка при изтриване на банер.`);
-			},
+				submitBtn.prop('disabled', false);
+				notifier.alert('Грешка при добавяне на банер.');
+			}
 		});
 	});
 });
