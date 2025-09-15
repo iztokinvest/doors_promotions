@@ -402,7 +402,7 @@ jQuery(document).ready(function ($) {
 		var formData = new FormData(form);
 		var $form = $(form);
 		var submitBtn = $form.find('button[type="submit"]');
-		submitBtn.prop('disabled', true);
+		submitBtn.prop('disabled', true).hide();
 		$.ajax({
 			url: ajaxurl,
 			type: "POST",
@@ -410,12 +410,11 @@ jQuery(document).ready(function ($) {
 			processData: false,
 			contentType: false,
 			success: function (response) {
-				submitBtn.prop('disabled', false);
 				if (response.success) {
 					// Save last data except image
 					lastPromoData = {};
 					$form.serializeArray().forEach(function (item) {
-						if (item.name !== 'promo_image') {
+						if (item.name !== 'promo_image' && item.name !== 'remove-file-upload') {
 							if (item.name === 'promo_categories[]') {
 								if (!lastPromoData[item.name]) lastPromoData[item.name] = [];
 								lastPromoData[item.name].push(item.value);
@@ -425,57 +424,31 @@ jQuery(document).ready(function ($) {
 						}
 					});
 					lastPromoData['active_banner'] = $form.find('#active_banner').prop('checked');
-					// Ask for similar banner
-					notifier.confirm(
-						'Банерът е добавен. Искате ли да качите друг подобен банер?',
-						function () {
-							// Reset only image, keep other fields
-							$form[0].reset();
-							Object.keys(lastPromoData).forEach(function (key) {
-								if (key === 'active_banner') {
-									$form.find('#active_banner').prop('checked', lastPromoData[key]);
-								} else if (key === 'promo_categories[]') {
-									$form.find('input[name="promo_categories[]"]').prop('checked', false);
-									lastPromoData[key].forEach(function (val) {
-										$form.find('input[name="promo_categories[]"][value="' + val + '"]').prop('checked', true);
-									});
-								} else {
-									$form.find('[name="' + key + '"]').val(lastPromoData[key]);
-								}
-							});
-							$form.find('#promo_image_preview').hide();
-						},
-						function () {
-							$form[0].reset();
-							$form.find('#promo_image_preview').hide();
-							// Redirect to promotions page with filter from selected shortcode
-							var selectedShortcode = lastPromoData['promo_shortcode'];
-							var filter = '';
-							if (selectedShortcode && selectedShortcode.includes('worktime')) {
-								filter = 'worktime';
-							} else if (selectedShortcode && selectedShortcode.includes('text')) {
-								filter = 'text';
-							} else if (selectedShortcode && selectedShortcode.includes('price')) {
-								filter = 'price';
-							} else if (selectedShortcode && selectedShortcode.includes('other')) {
-								filter = 'other';
-							} else if (selectedShortcode && selectedShortcode.includes('css')) {
-								filter = 'css';
-							}
-							if (filter) {
-								window.location.href = 'admin.php?page=promotions&filter=' + filter;
-							} else {
-								window.location.href = 'admin.php?page=promotions';
-							}
-						}
-					);
+					// Always redirect after upload, no fast add
+					var selectedShortcode = lastPromoData['promo_shortcode'];
+					var filter = '';
+					if (selectedShortcode && selectedShortcode.includes('worktime')) {
+						filter = 'worktime';
+					} else if (selectedShortcode && selectedShortcode.includes('text')) {
+						filter = 'text';
+					} else if (selectedShortcode && selectedShortcode.includes('price')) {
+						filter = 'price';
+					} else if (selectedShortcode && selectedShortcode.includes('other')) {
+						filter = 'other';
+					} else if (selectedShortcode && selectedShortcode.includes('css')) {
+						filter = 'css';
+					}
+					if (filter) {
+						window.location.href = 'admin.php?page=promotions&filter=' + filter + '#msg=Банерът е добавен.';
+					} else {
+						window.location.href = 'admin.php?page=promotions#msg=Банерът е добавен.';
+					}
 					notifier.success('Банерът е добавен успешно.');
 				} else {
 					notifier.alert(response.data && response.data.message ? response.data.message : 'Грешка при добавяне на банер.');
 				}
 			},
 			error: function () {
-				submitBtn.prop('disabled', false);
 				notifier.alert('Грешка при добавяне на банер.');
 			}
 		});
