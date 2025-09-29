@@ -3,7 +3,7 @@
 Plugin Name: Doors Promotions
 Plugin URI: https://github.com/iztokinvest/doors_promotions
 Description: Promo banner shortcodes.
-Version: 1.20.2
+Version: 1.20.3
 Author: Martin Mladenov
 GitHub Plugin URI: https://github.com/iztokinvest/doors_promotions
 GitHub Branch: main
@@ -1306,38 +1306,68 @@ add_action('wp_ajax_bulk_delete_promos', function() {
 });
 
 add_action('wp_ajax_submit_promo', function() {
-    // Same logic as handle_promotions_form, but for AJAX
     if (!current_user_can('manage_options')) {
         wp_send_json_error(['message' => 'Недостатъчни права.']);
     }
     global $wpdb;
     $table_name = $wpdb->prefix . 'doors_promotions';
-    $fields = [
-        'shortcode' => sanitize_text_field($_POST['promo_shortcode'] ?? ''),
-        'title' => sanitize_text_field($_POST['promo_title'] ?? ''),
-        'start_date' => date('Y-m-d', strtotime(str_replace('/', '-', $_POST['promo_start_date']))),
-        'end_date' => date('Y-m-d', strtotime(str_replace('/', '-', $_POST['promo_end_date']))),
-        'active' => !empty($_POST['active_banner']) ? 1 : 0,
-        'category' => isset($_POST['promo_categories']) && is_array($_POST['promo_categories']) ? intval($_POST['promo_categories'][0]) : null,
-    ];
-    // Handle image upload
-    if (!empty($_FILES['promo_image']['name'])) {
-        $upload_dir = wp_upload_dir();
-        $custom_dir = $upload_dir['basedir'] . '/doors_promotions/';
-        if (!file_exists($custom_dir)) {
-            wp_mkdir_p($custom_dir);
+
+    $promo_categories = isset($_POST['promo_categories']) ? $_POST['promo_categories'] : array();
+    $promo_title = sanitize_text_field($_POST['promo_title'] ?? '');
+    $promo_shortcode = sanitize_text_field($_POST['promo_shortcode'] ?? '');
+    $promo_start_date = date('Y-m-d', strtotime(str_replace('/', '-', $_POST['promo_start_date'])));
+    $promo_end_date = date('Y-m-d', strtotime(str_replace('/', '-', $_POST['promo_end_date'])));
+    $active_banner = !empty($_POST['active_banner']) ? 1 : 0;
+    $upload_dir = wp_upload_dir();
+    $promo_image = '';
+
+    if (!empty($_FILES['promo_image']['tmp_name'])) {
+        $upload_path = $upload_dir['basedir'] . '/doors_promotions/';
+        $upload_url = $upload_dir['baseurl'] . '/doors_promotions/';
+
+        if (!file_exists($upload_path)) {
+            mkdir($upload_path, 0755, true);
         }
-        $filename = sanitize_file_name($_FILES['promo_image']['name']);
-        $target_file = $custom_dir . $filename;
+
+        $filename = basename($_FILES['promo_image']['name']);
+        $target_file = $upload_path . $filename;
+
         if (move_uploaded_file($_FILES['promo_image']['tmp_name'], $target_file)) {
-            $fields['image'] = $upload_dir['baseurl'] . '/doors_promotions/' . $filename;
+            $promo_image = $upload_url . $filename;
         } else {
             wp_send_json_error(['message' => 'Грешка при качване на изображението.']);
         }
-    } else {
-        $fields['image'] = '';
     }
-    $wpdb->insert($table_name, $fields);
+
+    if (count($promo_categories) > 0) {
+        foreach ($promo_categories as $category_id) {
+            $wpdb->insert(
+                $table_name,
+                array(
+                    'category' => $category_id,
+                    'title' => $promo_title,
+                    'shortcode' => $promo_shortcode,
+                    'image' => $promo_image,
+                    'start_date' => $promo_start_date,
+                    'end_date' => $promo_end_date,
+                    'active' => $active_banner
+                )
+            );
+        }
+    } else {
+        $wpdb->insert(
+            $table_name,
+            array(
+                'title' => $promo_title,
+                'shortcode' => $promo_shortcode,
+                'image' => $promo_image,
+                'start_date' => $promo_start_date,
+                'end_date' => $promo_end_date,
+                'active' => $active_banner
+            )
+        );
+    }
+
     clear_cache();
     wp_send_json_success(['message' => 'Банерът е добавен успешно.']);
 });
